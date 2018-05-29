@@ -1,0 +1,8 @@
+bin/
+kombu/
+include/
+lib/
+lib64
+pip-selfcheck.json
+blackcat/blackcat/__pycache__/
+blackcat/blackcat/storysharing/__pycache__/
