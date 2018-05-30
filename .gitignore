@@ -6,3 +6,4 @@ lib64
 pip-selfcheck.json
 blackcat/blackcat/__pycache__/
 blackcat/blackcat/storysharing/__pycache__/
+blackcat/blackcat/storysharing/migrations/__pycache__/
