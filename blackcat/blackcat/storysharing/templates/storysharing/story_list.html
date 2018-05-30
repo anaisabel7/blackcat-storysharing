@@ -1,0 +1,6 @@
+<div>
+    <h1>Stories</h1>
+    {% for story in object_list %}
+    <p>{{ story.title }} by {% for writer in story.writers.get_queryset %}{{ writer }}, {% endfor %}</p>
+    {% endfor %}
+</div>

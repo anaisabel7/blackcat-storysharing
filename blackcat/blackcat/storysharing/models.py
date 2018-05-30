@@ -9,6 +9,7 @@ class User(AbstractUser):
 class Story(models.Model):
     title = models.CharField(max_length=100)
     writers = models.ManyToManyField(User)
+    public = models.BooleanField(default=False)
 
 
 class Snippet(models.Model):

@@ -8,7 +8,8 @@ class StoryTest(TestCase):
     def test_fields(self):
         expected_fields = {
             'title': models.CharField,
-            'writers': models.ManyToManyField
+            'writers': models.ManyToManyField,
+            'public': models.BooleanField
         }
 
         for field in expected_fields:
@@ -23,6 +24,8 @@ class StoryTest(TestCase):
         self.assertEqual(Story._meta.get_field('title').max_length, 100)
 
         self.assertEqual(Story._meta.get_field('writers').related_model, User)
+
+        self.assertEqual(Story._meta.get_field('public').default, False)
 
 
 class SnippetTest(TestCase):

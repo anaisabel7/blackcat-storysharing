@@ -1,0 +1,6 @@
+<div>
+    <h1>Welcome to Black Cat Story Sharing</h1>
+    <p>Would you like to...?</p>
+    <p><a href="{% url 'stories' %}">Take a look at our public stories</a></p>
+    <p>{% if user.is_authenticated %}Visit your profile{% else %}Create a user / Log in{% endif %} to start playing!</p>
+</div>
