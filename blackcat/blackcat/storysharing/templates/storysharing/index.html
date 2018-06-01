@@ -1,6 +1,14 @@
-<div>
-    <h1>Welcome to Black Cat Story Sharing</h1>
-    <p>Would you like to...?</p>
-    <p><a href="{% url 'stories' %}">Take a look at our public stories</a></p>
-    <p>{% if user.is_authenticated %}Visit your profile{% else %}Create a user / Log in{% endif %} to start playing!</p>
+{% extends "base.html" %}
+
+{% block content %}
+
+<div class="welcome">
+    <div class=title>
+        <p><span class="welcometo">Welcome to </span><span class="blackcat">Black Cat </span><span class="storysharing">Story Sharing</span></p>
+    </div>
+    <p class="options">Would you like to...?</p>
+    <p class="options"><a href="{% url 'stories' %}">Take a look at our public stories</a></p>
+    <p class="options"><a href="{% url 'personal' %}">{% if user.is_authenticated %}Visit your profile{% else %}Create a user / Log in{% endif %} to start <span class="playing">playing!</span></a></p>
 </div>
+
+{% endblock %}

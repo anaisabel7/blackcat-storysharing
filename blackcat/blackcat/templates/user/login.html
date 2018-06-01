@@ -1,0 +1,15 @@
+{% extends "base.html" %}
+
+{% block content %}
+
+<div class="main">
+    <p class="header">-- Log in --</p>
+    <form method='post', action="{% url 'login' %}">
+    {% csrf_token %}
+    {{ form.as_p }}
+    <input type='submit' value="Submit" />
+    </form>
+    <p class="links"><a href="{% url 'lost_password' %}"> > Did you forget your password? < </a></p>
+</div>
+
+{% endblock %}

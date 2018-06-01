@@ -1,3 +1,4 @@
+from django.contrib.auth import views as auth_views
 from django.urls import path
 from django.views.generic import TemplateView, ListView
 from . import views
@@ -10,7 +11,73 @@ urlpatterns = [
     ),
     path(
         'stories',
-        views.StoryListView.as_view(),
+        views.PublicStoriesView.as_view(),
         name='stories'
+    ),
+    path(
+        'personal',
+        views.PersonalStoriesView.as_view(),
+        name='personal'
+    )
+]
+
+# Auth
+
+urlpatterns = urlpatterns + [
+    path(
+        'login',
+        auth_views.LoginView.as_view(
+            template_name='user/login.html'
+        ),
+        name='login'
+    ),
+    path(
+        'logout',
+        auth_views.LogoutView.as_view(template_name='user/logout.html'),
+        name='logout'
+    ),
+    path(
+        'change_password',
+        auth_views.PasswordChangeView.as_view(
+            template_name='user/change_password.html',
+            success_url='change_password_done'
+        ),
+        name='change_password'
+    ),
+    path(
+        'change_password_done',
+        auth_views.PasswordChangeDoneView.as_view(
+            template_name='user/change_password_done.html'
+        ),
+        name='change_password_done'
+    ),
+    path(
+        'lost_password',
+        auth_views.PasswordResetView.as_view(
+            template_name='user/lost_password.html',
+            success_url='lost_password_done'
+        ),
+        name='lost_password'
+    ),
+    path(
+        'lost_password_done',
+        auth_views.PasswordResetDoneView.as_view(
+            template_name='user/lost_password_done.html'
+        ),
+        name='lost_password_done'
+    ),
+    path(
+        'reset_password/<uidb64>/<token>/',
+        auth_views.PasswordResetConfirmView.as_view(
+            template_name='user/reset_password.html'
+        ),
+        name='reset_password'
+    ),
+    path(
+        'reset_password_done',
+        auth_views.PasswordResetCompleteView.as_view(
+            template_name='user/reset_password_done.html'
+        ),
+        name='reset_password_done'
     )
 ]

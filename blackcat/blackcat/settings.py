@@ -27,8 +27,6 @@ DEBUG = True
 
 ALLOWED_HOSTS = []
 
-AUTH_USER_MODEL = 'storysharing.User'
-
 
 # Application definition
 
@@ -57,7 +55,7 @@ ROOT_URLCONF = 'blackcat.urls'
 TEMPLATES = [
     {
         'BACKEND': 'django.template.backends.django.DjangoTemplates',
-        'DIRS': [],
+        'DIRS': [os.path.join(BASE_DIR, 'blackcat/templates')],
         'APP_DIRS': True,
         'OPTIONS': {
             'context_processors': [
@@ -125,3 +123,13 @@ USE_TZ = True
 # https://docs.djangoproject.com/en/2.0/howto/static-files/
 
 STATIC_URL = '/static/'
+STATICFILES_DIRS = (
+    os.path.join(BASE_DIR, 'blackcat/storysharing/static'),
+)
+STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')
+
+# Extra
+
+AUTH_USER_MODEL = 'storysharing.User'
+LOGIN_URL = 'login'
+LOGIN_REDIRECT_URL = 'index'

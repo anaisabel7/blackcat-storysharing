@@ -1,6 +1,12 @@
-<div>
-    <h1>Stories</h1>
+{% extends "base.html" %}
+
+{% block content %}
+
+<div class="main">
+    <p class="header">Stories</p>
     {% for story in object_list %}
     <p>{{ story.title }} by {% for writer in story.writers.get_queryset %}{{ writer }}, {% endfor %}</p>
     {% endfor %}
 </div>
+
+{% endblock %}
