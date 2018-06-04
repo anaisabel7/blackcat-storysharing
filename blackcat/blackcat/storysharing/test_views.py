@@ -58,7 +58,6 @@ class PublicStoriesViewTest(TestCase):
         user = create_random_user()
         story.writers.add(user)
         public_story_response = self.client.get(reverse('stories'))
-        print(public_story_response.content)
         self.assertNotEqual(
             str(response.content),
             str(public_story_response.content)
@@ -88,3 +87,7 @@ class PersonalStoriesViewTest(TestCase):
         self.assertContains(response, user.username)
         self.assertNotIn(other_user.username, str(response.content))
         self.assertNotIn(other_story.title, str(response.content))
+
+
+class BaseContentTest(TestCase):
+    pass

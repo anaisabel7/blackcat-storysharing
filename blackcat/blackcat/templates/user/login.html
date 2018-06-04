@@ -8,6 +8,7 @@
     {% csrf_token %}
     {{ form.as_p }}
     <input type='submit' value="Submit" />
+    <input type="hidden" name="next" value="{{ next }}" />
     </form>
     <p class="links"><a href="{% url 'lost_password' %}"> > Did you forget your password? < </a></p>
 </div>
