@@ -7,3 +7,4 @@ pip-selfcheck.json
 blackcat/blackcat/__pycache__/
 blackcat/blackcat/storysharing/__pycache__/
 blackcat/blackcat/storysharing/migrations/__pycache__/
+blackcat/blackcat/email_settings.py

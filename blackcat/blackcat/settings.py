@@ -133,3 +133,13 @@ STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')
 AUTH_USER_MODEL = 'storysharing.User'
 LOGIN_URL = 'login'
 LOGIN_REDIRECT_URL = 'index'
+
+# Email settings
+
+from . import email_settings
+
+EMAIL_USE_TLS = True
+EMAIL_HOST = 'smtp.gmail.com'
+EMAIL_HOST_USER = email_settings.email
+EMAIL_HOST_PASSWORD = email_settings.password
+EMAIL_PORT = 587
