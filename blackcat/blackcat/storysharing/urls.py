@@ -2,6 +2,7 @@ from django.contrib.auth import views as auth_views
 from django.urls import path
 from django.views.generic import TemplateView, ListView
 from . import views
+from .. import user_views
 
 urlpatterns = [
     path(
@@ -24,6 +25,11 @@ urlpatterns = [
 # Auth
 
 urlpatterns = urlpatterns + [
+    path(
+        'create_user',
+        user_views.CreateUserView.as_view(),
+        name='create_user'
+    ),
     path(
         'login',
         auth_views.LoginView.as_view(
