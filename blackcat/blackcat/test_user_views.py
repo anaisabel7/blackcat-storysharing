@@ -1,8 +1,7 @@
-from django.contrib.auth.tokens import PasswordResetTokenGenerator
+from django.template import loader
 from django.test import TestCase
 from django.urls import reverse
 from .storysharing.test_views import create_random_user
-import base64
 
 
 def get_go_back_home_link():
@@ -10,6 +9,16 @@ def get_go_back_home_link():
         reverse('index')
     )
     return link
+
+
+def get_password_warnings():
+    warnings = [
+        "be too similar to your other personal information.",
+        "Your password must contain at least 8 characters.",
+        "be a commonly used password.",
+        "be entirely numeric."
+    ]
+    return warnings
 
 
 class LoginViewTest(TestCase):
@@ -69,22 +78,11 @@ class ChangePasswordViewTest(TestCase):
         self.assertContains(response, "Old password:")
         self.assertContains(response, "New password:")
         self.assertContains(response, "New password confirmation:")
-        self.assertContains(
-            response,
-            "be too similar to your other personal information."
-        )
-        self.assertContains(
-            response,
-            "Your password must contain at least 8 characters."
-        )
-        self.assertContains(
-            response,
-            "be a commonly used password."
-        )
-        self.assertContains(
-            response,
-            "be entirely numeric."
-        )
+
+        password_warnings = get_password_warnings()
+        for warning in password_warnings:
+            self.assertContains(response, warning)
+
         self.assertContains(response, "Submit")
         self.assertContains(response, "<input")
         self.assertContains(response, "type='submit'")
@@ -108,17 +106,14 @@ class ChangePasswordDoneViewTest(TestCase):
 class ResetPasswordViewTest(TestCase):
 
     def test_content(self):
-        # user = create_random_user()
-        # token = PasswordResetTokenGenerator().make_token(user)
-        # uidb64 = base64.urlsafe_b64encode(bytes([user.id]))
-        # response = self.client.get(reverse('reset_password', kwargs={
-        #     'uidb64': uidb64,
-        #     'token': token
-        # }))
-        # self.assertContains(response, "-- Reset your password --")
-        # self.assertContains(response, "New Password:")
-        # self.assertContains(response, "Submit")
-        pass
+        response = self.client.get(reverse('reset_password', kwargs={
+            'uidb64': 'NA',
+            'token': 'set-password'
+        }))
+        self.assertContains(response, "-- Reset your password --")
+        self.assertContains(response, "Submit")
+        self.assertContains(response, "<form method=\"post\">")
+        self.assertContains(response, "<input type='submit'")
 
 
 class ResetPasswordDoneViewTest(TestCase):
