@@ -106,14 +106,28 @@ class ChangePasswordDoneViewTest(TestCase):
 class ResetPasswordViewTest(TestCase):
 
     def test_content(self):
+        tmp_response = self.client.get(reverse('reset_password', kwargs={
+            'uidb64': 'NA',
+            'token': 'set-password'
+        }))
+
+        context = tmp_response.context[0].flatten()
+        context['validlink'] = True
+        template = loader.get_template("user/reset_password.html")
+        response_content = template.render(context)
+        self.assertIn("-- Reset your password --", response_content)
+        self.assertIn("Submit", response_content)
+        self.assertIn("<form method=\"post\">", response_content)
+        self.assertIn("<input type='submit'", response_content)
+
+    def test_cotnent_for_invalid_link(self):
         response = self.client.get(reverse('reset_password', kwargs={
             'uidb64': 'NA',
             'token': 'set-password'
         }))
-        self.assertContains(response, "-- Reset your password --")
-        self.assertContains(response, "Submit")
-        self.assertContains(response, "<form method=\"post\">")
-        self.assertContains(response, "<input type='submit'")
+        self.assertContains(response, "-- Invalid reset password link --")
+        self.assertContains(response, "> Get a new reset password link <")
+        self.assertContains(response, reverse('lost_password'))
 
 
 class ResetPasswordDoneViewTest(TestCase):
