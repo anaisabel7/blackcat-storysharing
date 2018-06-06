@@ -26,6 +26,11 @@ urlpatterns = [
 
 urlpatterns = urlpatterns + [
     path(
+        'profile',
+        user_views.ProfileView.as_view(),
+        name='profile'
+    ),
+    path(
         'create_user',
         user_views.CreateUserView.as_view(),
         name='create_user'

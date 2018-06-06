@@ -1,7 +1,9 @@
 from django.template import loader
 from django.test import TestCase
 from django.urls import reverse
-from .storysharing.test_views import create_random_user
+from django.utils.html import escape
+from blackcat.storysharing.models import User
+from blackcat.storysharing.test_views import create_random_user
 
 
 def get_go_back_home_link():
@@ -30,11 +32,13 @@ class LoginViewTest(TestCase):
         self.assertContains(response, "Password:")
         self.assertContains(response, "Submit")
         self.assertContains(response, "> Did you forget your password? <")
+        self.assertContains(response, "> Create a new user. < ")
         self.assertContains(response, "<input")
         self.assertContains(response, "type=\"text\"")
         self.assertContains(response, "type='submit'")
         self.assertContains(response, "type=\"hidden\"")
         self.assertContains(response, reverse('lost_password'))
+        self.assertContains(response, reverse('create_user'))
 
 
 class LogoutViewTest(TestCase):
@@ -136,3 +140,92 @@ class ResetPasswordDoneViewTest(TestCase):
         response = self.client.get(reverse('reset_password_done'))
         self.assertContains(response, "Your password has been reset")
         self.assertContains(response, get_go_back_home_link())
+
+
+class CreateUserViewTest(TestCase):
+
+    def test_content(self):
+        response = self.client.get(reverse('create_user'))
+        self.assertContains(response, "-- Create a new user --")
+        self.assertContains(response, "Email:")
+        self.assertContains(response, "Username:")
+        self.assertContains(response, "Password:")
+        self.assertContains(response, "Password confirmation:")
+        self.assertContains(response, "Submit")
+        self.assertContains(response, "<input type=\"submit\"")
+        self.assertContains(response, "<form method=\"post\"")
+
+    def test_post_invalid_form_reloads_form_with_warning_errors(self):
+        post_data = {
+            "email": "random@email.com",
+            "username": "randomuser",
+            "password1": "onepassword",
+            "password2": "anotherpassword",
+        }
+        response = self.client.post(reverse('create_user'), data=post_data)
+        self.assertContains(response, "-- Create a new user --")
+        self.assertContains(response, "Email:")
+        self.assertContains(response, "Username:")
+        self.assertContains(response, "Password:")
+        self.assertContains(response, "Password confirmation:")
+        self.assertContains(
+            response,
+            escape("The two password fields didn't match.")
+        )
+
+    def test_post_valid_form_redirects_to_homepage_and_creates_user(self):
+
+        self.assertEqual(User.objects.filter(username='randomuser').count(), 0)
+
+        post_data = {
+            "email": "random@email.com",
+            "username": "randomuser",
+            "password1": "onepassword",
+            "password2": "onepassword",
+            'csrfmiddlewaretoken': [
+                '87cxzfj3CGaMaFczM6vumJ3D1d9zGWLqufrVhCQXBDBK6TYvRfte9hzln48wYRo4'
+            ]
+        }
+        response = self.client.post(
+            reverse('create_user'), data=post_data, follow=True
+        )
+        self.assertRedirects(response, reverse('index'))
+        self.assertEqual(User.objects.filter(username='randomuser').count(), 1)
+
+        user = User.objects.filter(username='randomuser')[0]
+        self.assertEqual(user.email, "random@email.com")
+        self.assertTrue(user.check_password('onepassword'))
+
+    def test_post_valid_form_logging_users_out_and_in(self):
+
+        prev_user = User.objects.create(
+            username="previoususer", email="previous@email.com"
+        )
+        prev_user.set_password('password')
+        prev_user.save()
+        self.client.login(
+            username=prev_user.username, password='password'
+        )
+
+        response = self.client.get(reverse('create_user'))
+
+        self.assertEqual(response.context['user'].username, prev_user.username)
+
+        post_data = {
+            "email": "random@email.com",
+            "username": "randomuser",
+            "password1": "onepassword",
+            "password2": "onepassword",
+            'csrfmiddlewaretoken': [
+                '87cxzfj3CGaMaFczM6vumJ3D1d9zGWLqufrVhCQXBDBK6TYvRfte9hzln48wYRo4'
+            ]
+        }
+
+        response = self.client.post(
+            reverse('create_user'), data=post_data, follow=True
+        )
+
+        self.assertNotEqual(
+            response.context['user'].username, prev_user.username
+        )
+        self.assertEqual(response.context['user'].username, "randomuser")

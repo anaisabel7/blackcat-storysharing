@@ -1,0 +1,30 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="main">
+    <p class="header">-- Your Profile --</p>
+    <form method="post" action="profile">
+        {% csrf_token %}
+        {{ form.errors }}
+        <p>
+            {{ form.username.label_tag }}
+            {{ user.username|title }}
+            <input type="hidden" name="username" value="{{ user.username }}">
+        </p>
+        <p>
+            {{ form.email.errors }}
+            {{ form.email.label_tag }}
+            {{ form.email }}
+        </p>
+        <input type="submit" value="Apply changes">
+    </form>
+    {% if applied %}
+        <p class="links">Changes applied.</p>
+    {% elif post %}
+        <p class="links">The changes could not be applied</p>
+    {% endif %}
+    <p class="links"><a href="{% url 'change_password' %}"> > Change your password < </a></p>
+    <p class="links"><a href="{% url 'personal' %}"> > Visit your stories < </a></p>
+    <p class="links"><a> > Start a new story < </a></p>
+</div>
+{% endblock %}
