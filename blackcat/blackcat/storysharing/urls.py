@@ -19,7 +19,17 @@ urlpatterns = [
         'personal',
         views.PersonalStoriesView.as_view(),
         name='personal'
-    )
+    ),
+    path(
+        'start_story',
+        views.StartStoryView.as_view(),
+        name='start_story'
+    ),
+    path(
+        'display_story/<id>/',
+        views.DisplayStoryView.as_view(),
+        name='display_story'
+    ),
 ]
 
 # Auth

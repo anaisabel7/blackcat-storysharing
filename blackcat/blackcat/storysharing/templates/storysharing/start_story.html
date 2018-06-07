@@ -1,0 +1,14 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<script src="/admin/jsi18n"></script>
+
+<div class="main">
+    <p class="header">-- Start a new story --</p>
+    <form method="post" action="{% url 'start_story' %}">
+        {% csrf_token %}
+        {{ form.as_p }}
+        <input type="submit" value="Create story">
+    </form>
+</div>
+{% endblock %}
