@@ -1,9 +1,10 @@
 from django.template import loader
-from django.test import TestCase
+from django.test import TestCase, RequestFactory
 from django.urls import reverse
 from django.utils.html import escape
 from blackcat.storysharing.models import User
 from blackcat.storysharing.test_views import create_random_user
+from blackcat.user_views import ProfileView, CreateUserView
 
 
 def get_go_back_home_link():
@@ -229,3 +230,116 @@ class CreateUserViewTest(TestCase):
             response.context['user'].username, prev_user.username
         )
         self.assertEqual(response.context['user'].username, "randomuser")
+
+    def test_never_cache(self):
+        request = RequestFactory().get(reverse('create_user'))
+        response = CreateUserView().dispatch(request)
+        self.assertTrue(response.has_header('cache-control'))
+        no_cache_headers = [
+            'max-age=0', 'no-cache', 'no-store', 'must-revalidate'
+        ]
+        for header in no_cache_headers:
+            self.assertIn(header, response._headers['cache-control'][1])
+
+    def test_sensitive_post_parameters(self):
+        request = RequestFactory().post(reverse('create_user'), data={})
+        CreateUserView().dispatch(request)
+        self.assertEqual(
+            request.sensitive_post_parameters,
+            '__ALL__'
+        )
+
+
+class ProfileViewTest(TestCase):
+    def test_content(self):
+        user = create_random_user()
+        self.client.login(username=user.username, password='password')
+        response = self.client.get(reverse('profile'))
+        self.assertContains(response, "-- Your Profile --")
+        self.assertContains(response, "Username:")
+        self.assertContains(response, user.username.title())
+        self.assertContains(response, "Email address:")
+        self.assertContains(response, user.email)
+        self.assertContains(response, "Apply changes")
+        self.assertContains(response, "> Change your password <")
+        self.assertContains(response, "> Visit your stories <")
+        self.assertContains(response, "> Start a new story <")
+        self.assertContains(response, reverse('change_password'))
+        self.assertContains(response, reverse('personal'))
+        self.assertContains(
+            response, "<input type=\"hidden\" name=\"username\"")
+        self.assertContains(response, "<input type=\"submit\"")
+        self.assertContains(response, "<form method=\"post\"")
+        self.assertNotIn("Changes applied", str(response.content))
+
+    def test_post_correct_form(self):
+        user = create_random_user()
+        self.client.login(username=user.username, password='password')
+        post_data = {
+            'username': user.username,
+            'email': "another@email.com"
+        }
+        response = self.client.post(reverse('profile'), data=post_data)
+        self.assertContains(response, "Username:")
+        self.assertContains(response, user.username.title())
+        self.assertContains(response, "Email address:")
+        self.assertContains(response, "another@email.com")
+        self.assertContains(response, "Changes applied")
+        self.assertNotIn(
+            "The changes could not be applied", str(response.content)
+        )
+        self.assertEqual(
+            User.objects.filter(username=user.username)[0].email,
+            "another@email.com"
+        )
+
+    def test_post_incorrect_form(self):
+        user = create_random_user()
+        self.client.login(username=user.username, password='password')
+        post_data = {
+            'username': user.username,
+            'email': "½nvÀl¡d@€m@il.com"
+        }
+        response = self.client.post(reverse('profile'), data=post_data)
+        self.assertContains(response, "Username:")
+        self.assertContains(response, user.username.title())
+        self.assertContains(response, "Email address:")
+        self.assertContains(response, post_data['email'])
+        self.assertContains(response, "The changes could not be applied")
+        self.assertNotIn("Changes applied", str(response.content))
+        self.assertNotEqual(
+            User.objects.filter(username=user.username)[0].email,
+            post_data['email']
+        )
+        self.assertEqual(
+            User.objects.filter(username=user.username)[0].email,
+            user.email
+        )
+
+    def test_login_required(self):
+        self.client.logout()
+        response = self.client.get(reverse('profile'))
+        self.assertRedirects(
+            response,
+            reverse('login') + "?next=" + reverse('profile')
+        )
+
+    def test_sensitive_post_parameters(self):
+        request = RequestFactory().post(reverse('profile'), data={})
+        ProfileView().dispatch(request)
+        self.assertEqual(
+            request.sensitive_post_parameters,
+            '__ALL__'
+        )
+
+    def test_cache_control(self):
+        user = create_random_user()
+        request = RequestFactory().get(reverse('profile'))
+        request.user = user
+        response = ProfileView().dispatch(request)
+        self.assertTrue(response.has_header('cache-control'))
+        no_cache_headers = [
+            'max-age=0', 'no-cache', 'no-store', 'must-revalidate'
+        ]
+        for header in no_cache_headers:
+            self.assertIn(header, response._headers['cache-control'][1])

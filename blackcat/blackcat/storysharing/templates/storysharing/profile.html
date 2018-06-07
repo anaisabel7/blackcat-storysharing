@@ -20,7 +20,7 @@
     </form>
     {% if applied %}
         <p class="links">Changes applied.</p>
-    {% elif post %}
+    {% elif submitted %}
         <p class="links">The changes could not be applied</p>
     {% endif %}
     <p class="links"><a href="{% url 'change_password' %}"> > Change your password < </a></p>

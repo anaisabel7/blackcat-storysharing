@@ -66,6 +66,8 @@ class ProfileView(View):
 
     def post(self, request, *args, **kwargs):
         form = self.form_class(request.POST, instance=request.user)
+        self.context['applied'] = False
+
         if form.is_valid():
             user = request.user
             user.email = form.cleaned_data['email']
@@ -73,6 +75,6 @@ class ProfileView(View):
             form = self.form_class(initial=self.get_initial_form(request))
             self.context['applied'] = True
 
-        self.context['post'] = True
+        self.context['submitted'] = True
         self.context['form'] = form
         return render(request, self.template_name, self.context)
