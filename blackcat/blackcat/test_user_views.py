@@ -264,8 +264,11 @@ class ProfileViewTest(TestCase):
         self.assertContains(response, "> Change your password <")
         self.assertContains(response, "> Visit your stories <")
         self.assertContains(response, "> Start a new story <")
+        self.assertContains(response, "> Log out <")
         self.assertContains(response, reverse('change_password'))
         self.assertContains(response, reverse('personal'))
+        self.assertContains(response, reverse('profile'))
+        self.assertContains(response, reverse('logout'))
         self.assertContains(
             response, "<input type=\"hidden\" name=\"username\"")
         self.assertContains(response, "<input type=\"submit\"")
