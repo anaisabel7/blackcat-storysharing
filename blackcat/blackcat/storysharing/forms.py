@@ -1,5 +1,5 @@
 from django.contrib.admin.widgets import FilteredSelectMultiple
-from django.forms import ModelForm, TextInput, SelectMultiple
+from django.forms import ModelForm
 from .models import Story
 
 
@@ -17,8 +17,6 @@ class StartStoryForm(ModelForm):
             "public":
                 "Set this story as public, available for the world to see"
         }
-        # widgets = {'writers': TextInput()}
-        # widgets = {'writers': FilteredSelectMultiple(
-        #     verbose_name="Writer", is_stacked=False
-        # )}
-        widgets = {'writers': SelectMultiple()}
+        widgets = {'writers': FilteredSelectMultiple(
+            verbose_name="writers", is_stacked=False
+        )}

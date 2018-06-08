@@ -1,13 +1,26 @@
 {% extends 'base.html' %}
 
 {% block content %}
-<script src="/admin/jsi18n"></script>
+<script src="{% url 'jsi18n' %}"></script>
 
 <div class="main">
     <p class="header">-- Start a new story --</p>
-    <form method="post" action="{% url 'start_story' %}">
+
+    {{ form.media }}
+    <form method="post" enctype="multipart/form-data" action="{% url 'start_story' %}">
         {% csrf_token %}
-        {{ form.as_p }}
+        <p class="form-story-title">
+            {{ form.title.errors }}
+            {{ form.title.label_tag }} {{ form.title }}
+        </p>
+        <p class="form-story-writers">
+            {{ form.writers.errors }}
+            {{ form.writers.label_tag }} {{ form.writers }}
+        </p>
+        <p class="form-story-public">
+            {{ form.public.errors }}
+            {{ form.public.label_tag }} {{ form.public }}
+        </p>
         <input type="submit" value="Create story">
     </form>
 </div>

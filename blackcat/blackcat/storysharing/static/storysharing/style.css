@@ -131,3 +131,50 @@ body {
     text-decoration: none;
     color: #1e1e41;
 }
+
+/* Forms */
+
+.main form .selector {
+    float: none;
+}
+
+.main form .selector h2 {
+    font-family: Georgia, serif;
+    color: #00001a;
+}
+
+.main form .selector .selector-available .selector-filter {
+    border-bottom: 3px solid #00001a;
+}
+
+.main form .selector .selector-available .filtered {
+    background: #e6e6ff;
+    border-color: #e6e6ff;
+    border-style: solid;
+}
+
+.main form .selector .selector-available .selector-chooseall {
+    margin-bottom: 30px;
+}
+
+.main form .selector select {
+    padding: 5px 10px;
+}
+
+.main form .selector select option {
+    padding-top: 3px;
+    font-size: 16px;
+    font-family: Georgia, serif;
+    font-weight: bold;
+    color: #00001a;
+}
+
+.main form .selector .selector-chosen h2 {
+    color: #ccccff;
+    background: #1e1e41;
+    padding: 1px;
+}
+
+.main form .form-story-public {
+    clear: left;
+}

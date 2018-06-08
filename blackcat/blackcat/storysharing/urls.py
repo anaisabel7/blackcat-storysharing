@@ -1,5 +1,6 @@
 from django.contrib.auth import views as auth_views
 from django.urls import path
+from django.views.i18n import JavaScriptCatalog
 from django.views.generic import TemplateView, ListView
 from . import views
 from .. import user_views
@@ -102,5 +103,15 @@ urlpatterns = urlpatterns + [
             template_name='user/reset_password_done.html'
         ),
         name='reset_password_done'
+    )
+]
+
+# Url change for django admin javascript
+
+urlpatterns = urlpatterns + [
+    path(
+        'utils/jsi18n/',
+        JavaScriptCatalog.as_view(),
+        name='jsi18n'
     )
 ]
