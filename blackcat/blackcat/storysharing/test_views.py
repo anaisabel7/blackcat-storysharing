@@ -2,6 +2,7 @@ from django.contrib.auth import login
 from django.urls import reverse
 from django.test import TestCase
 from .models import User, Story
+from .urls import urlpatterns
 
 
 def create_random_user():
@@ -170,4 +171,124 @@ class StartStoryViewTest(TestCase):
 
 
 class BaseContentTest(TestCase):
-    pass
+
+    def test_header_displays_in_all_pages(self):
+        user = create_random_user()
+        self.client.login(username=user.username, password="password")
+        headers = [
+            '<meta name="viewport" {}>'.format(
+                'content="width=device-width, initial-scale=1.0"'
+            ),
+            '<link rel="stylesheet" type="text/css" {}>'.format(
+                'href="/static/storysharing/style.css"'
+            )
+        ]
+
+        pages = [x.name for x in urlpatterns]
+        pages.remove('logout')
+        pages + ['logout']
+
+        pages.remove('display_story')
+        pages.remove('reset_password')
+
+        pages.remove('jsi18n')
+        for page in pages:
+            response = self.client.get(reverse(page))
+            for header in headers:
+                self.assertContains(
+                    response,
+                    header
+                )
+
+        story = Story.objects.create(title="Awesome story")
+        response = self.client.get(
+            reverse('display_story', kwargs={'id': story.id})
+        )
+        for header in headers:
+            self.assertContains(
+                response,
+                header
+            )
+
+        response = self.client.get(reverse(
+            'reset_password', kwargs={'uidb64': 'NA', 'token': 'set-password'}
+        ))
+        for header in headers:
+            self.assertContains(
+                response,
+                header
+            )
+
+    def test_menu_displays_in_all_pages(self):
+        user = create_random_user()
+        self.client.login(username=user.username, password="password")
+
+        pages = [x.name for x in urlpatterns]
+        pages.remove('logout')
+
+        pages.remove('display_story')
+        pages.remove('reset_password')
+
+        pages.remove('jsi18n')
+        for page in pages:
+            response = self.client.get(reverse(page))
+            self.assertContains(response, "<div class='menu'>")
+            self.assertContains(response, reverse('index'))
+            self.assertContains(response, reverse('stories'))
+            self.assertContains(response, reverse('personal'))
+            self.assertContains(response, reverse('profile'))
+            self.assertContains(response, "Home")
+            self.assertContains(response, "Public Stories")
+            self.assertContains(response, "Your Stories")
+            self.assertContains(response, user.username.title())
+
+        story = Story.objects.create(title="Awesome story")
+        response = self.client.get(
+            reverse('display_story', kwargs={'id': story.id})
+        )
+        response = self.client.get(reverse(page))
+        self.assertContains(response, "<div class='menu'>")
+        self.assertContains(response, reverse('index'))
+        self.assertContains(response, reverse('stories'))
+        self.assertContains(response, reverse('personal'))
+        self.assertContains(response, reverse('profile'))
+        self.assertContains(response, "Home")
+        self.assertContains(response, "Public Stories")
+        self.assertContains(response, "Your Stories")
+        self.assertContains(response, user.username.title())
+
+        response = self.client.get(reverse(
+            'reset_password', kwargs={'uidb64': 'NA', 'token': 'set-password'}
+        ))
+        self.assertContains(response, "<div class='menu'>")
+        self.assertContains(response, reverse('index'))
+        self.assertContains(response, reverse('stories'))
+        self.assertContains(response, reverse('personal'))
+        self.assertContains(response, reverse('profile'))
+        self.assertContains(response, "Home")
+        self.assertContains(response, "Public Stories")
+        self.assertContains(response, "Your Stories")
+        self.assertContains(response, user.username.title())
+
+        # User logged out menu content
+        response = self.client.get(reverse('logout'))
+        self.assertContains(response, "<div class='menu'>")
+        self.assertContains(response, reverse('index'))
+        self.assertContains(response, reverse('stories'))
+        self.assertContains(response, reverse('personal'))
+        self.assertContains(response, reverse('login'))
+        self.assertContains(response, "Home")
+        self.assertContains(response, "Public Stories")
+        self.assertContains(response, "Your Stories")
+        self.assertContains(response, "Log In")
+
+        response = self.client.get(reverse('index'))
+        self.assertContains(response, "<div class='menu'>")
+        self.assertContains(response, reverse('index'))
+        self.assertContains(response, reverse('stories'))
+        self.assertContains(response, reverse('personal'))
+        self.assertContains(response, reverse('login'))
+        self.assertContains(response, "Home")
+        self.assertContains(response, "Public Stories")
+        self.assertContains(response, "Your Stories")
+        self.assertContains(response, "Log In")
