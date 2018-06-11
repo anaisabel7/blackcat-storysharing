@@ -89,5 +89,85 @@ class PersonalStoriesViewTest(TestCase):
         self.assertNotIn(other_story.title, str(response.content))
 
 
+class StartStoryViewTest(TestCase):
+    def test_content(self):
+        user = create_random_user()
+        self.client.login(username=user.username, password="password")
+        response = self.client.get(reverse('start_story'))
+        self.assertContains(response, "-- Start a new story --")
+        self.assertContains(response, "Title:")
+        self.assertContains(response, "Writers:")
+        self.assertContains(
+            response,
+            "Set this story as public, available for the world to see"
+        )
+        self.assertContains(response, "Create story")
+        self.assertContains(response, "<form method=\"post\"")
+        self.assertContains(response, "<input type=\"submit\"")
+
+    def test_post_correct_form(self):
+        user = create_random_user()
+        self.client.login(username=user.username, password="password")
+        post_data = {
+            'title': "A story title",
+            'writers': [user.id],
+            'public': True
+        }
+        self.assertEqual(
+            Story.objects.filter(title="A story title").count(), 0
+        )
+        response = self.client.post(reverse('start_story'), data=post_data)
+        self.assertEqual(
+            Story.objects.filter(title="A story title").count(), 1
+        )
+        story = Story.objects.filter(title="A story title")[0]
+        self.assertEqual(story.writers.count(), 1)
+        self.assertEqual(story.writers.all()[0], user)
+        self.assertEqual(story.public, True)
+        self.assertRedirects(
+            response,
+            reverse('display_story', kwargs={'id': story.id})
+        )
+
+    def test_post_incorrect_form(self):
+        user = create_random_user()
+        self.client.login(username=user.username, password="password")
+        post_data = {
+            'title': "Another story title",
+            'writers': 'Eusebio',
+            'public': True
+        }
+        self.assertEqual(
+            Story.objects.filter(title="Another story title").count(),
+            0
+        )
+        response = self.client.post(reverse('start_story'), data=post_data)
+        self.assertContains(response, "Title:")
+        self.assertContains(response, "Writers:")
+        self.assertContains(
+            response,
+            "Set this story as public, available for the world to see"
+        )
+        self.assertContains(response, "Create story")
+
+        self.assertIn('errors', response.context)
+        self.assertContains(
+            response,
+            "There were some problems with the data introduced below."
+        )
+        self.assertContains(response, "The story has not been created")
+        self.assertEqual(
+            Story.objects.filter(title="Another story title").count(),
+            0
+        )
+
+    def test_login_required(self):
+        self.client.logout()
+        response = self.client.get(reverse('start_story'))
+        self.assertRedirects(
+            response, reverse('login') + '?next=' + reverse('start_story')
+        )
+
+
 class BaseContentTest(TestCase):
     pass

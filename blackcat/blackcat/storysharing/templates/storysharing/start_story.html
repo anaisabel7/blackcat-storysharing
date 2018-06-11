@@ -6,20 +6,26 @@
 <div class="main">
     <p class="header">-- Start a new story --</p>
 
+    {% if errors %}
+        <p class="links">There were some problems with the data introduced below.</p>
+        <p class="links">The story has not been created.</p>
+    {% endif %}
+
     {{ form.media }}
     <form method="post" enctype="multipart/form-data" action="{% url 'start_story' %}">
         {% csrf_token %}
         <p class="form-story-title">
-            {{ form.title.errors }}
             {{ form.title.label_tag }} {{ form.title }}
+            {{ form.title.errors }}
         </p>
-        <p class="form-story-writers">
+        <div class="form-story-writers">
+            {{ form.writers.label_tag }}
             {{ form.writers.errors }}
-            {{ form.writers.label_tag }} {{ form.writers }}
-        </p>
+            {{ form.writers }}
+        </div>
         <p class="form-story-public">
-            {{ form.public.errors }}
             {{ form.public.label_tag }} {{ form.public }}
+            {{ form.public.errors }}
         </p>
         <input type="submit" value="Create story">
     </form>

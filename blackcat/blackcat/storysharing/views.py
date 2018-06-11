@@ -63,4 +63,8 @@ class StartStoryView(View):
 
 
 class DisplayStoryView(View):
-    pass
+    template_name = "storysharing/display_story.html"
+    context = {}
+
+    def get(self, request, *args, **kwargs):
+        return render(request, self.template_name, self.context)
