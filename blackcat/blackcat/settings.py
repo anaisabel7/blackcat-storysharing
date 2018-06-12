@@ -134,6 +134,8 @@ AUTH_USER_MODEL = 'storysharing.User'
 LOGIN_URL = 'login'
 LOGIN_REDIRECT_URL = 'index'
 
+SITE_DOMAIN = "."
+
 # Email settings
 
 from . import email_settings
