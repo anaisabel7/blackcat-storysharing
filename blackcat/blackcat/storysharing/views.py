@@ -24,6 +24,16 @@ class PersonalStoriesView(ListView):
     template_name = 'storysharing/personal_stories.html'
     form_name = StoryWriterActiveForm
 
+    def set_active_story(self, story):
+        no_active_writers = StoryWriter.objects.filter(
+            story=story).filter(active=True).count()
+
+        if no_active_writers >= 2:
+            story.available = True
+        else:
+            story.available = False
+        story.save()
+
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         context['form'] = self.form_name()
@@ -42,6 +52,7 @@ class PersonalStoriesView(ListView):
             ).filter(writer=request.user)[0]
             storywriter.active = form.cleaned_data['active']
             storywriter.save()
+            self.set_active_story(storywriter.story)
 
         return self.render_to_response(context)
 
