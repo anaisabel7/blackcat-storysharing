@@ -101,7 +101,7 @@ body {
     font-size: 18px;
 }
 
-.main .lisklinks a:link {
+.main .listlinks a:link {
     color: #ccccff;
 }
 
@@ -132,6 +132,7 @@ body {
 }
 
 .main .links {
+    color: #1e1e41;
     font-size: 18px;
 }
 

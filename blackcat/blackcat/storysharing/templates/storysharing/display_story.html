@@ -2,6 +2,26 @@
 
 {% block content %}
     <div class="main">
-        This should be displaying your story.
+        {% if doesnt_exist %}
+            <p class="header">This story doesn't exist!</p>
+            <p class="links">...or maybe it is not available for the world to see.</p>
+            <p class="links">If you are one of its writers... Maybe you forgot to log in?</p>
+        {% else %}
+            <p class="header">{{ story.title|title }}</p>
+            {% if editable %}
+                {% if not storywriter.active %}
+                    <p class="links">You have not set this story as active. If you want to play here, visit <a href="{% url 'personal' %}">your personal stories</a> and set it as active.</p>
+                {% endif %}
+                {% if not story.available %}
+                    <p class="links">This story is unavailable.</p>
+                    <p class="links">Our game cannot be played on here yet!</p>
+                    <p class="links">It will remain this way until two or more writers of this story set it as active on their list of personal stories.</p>
+                {% endif %}
+            {% endif %}
+            {% for snippet in snippets %}
+                <p class="text">{{ snippet.text }}</p>
+                <p class="text">- by {{ snippet.author }}</p>
+            {% endfor %}
+        {% endif %}
     </div>
 {% endblock %}

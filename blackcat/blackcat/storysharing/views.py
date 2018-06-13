@@ -7,7 +7,7 @@ from django.template import loader
 from django.urls import reverse
 from django.utils.decorators import method_decorator
 from django.views.generic import ListView, View
-from .models import Story, StoryWriter
+from .models import Story, StoryWriter, Snippet
 from .forms import StartStoryForm, StoryWriterActiveForm
 
 
@@ -124,4 +124,27 @@ class DisplayStoryView(View):
     context = {}
 
     def get(self, request, *args, **kwargs):
+        try:
+            story = Story.objects.filter(id=kwargs['id'])[0]
+            self.context['story'] = story
+        except IndexError:
+            return render(request, self.template_name, {'doesnt_exist': True})
+
+        writers_queryset = story.writers.get_queryset()
+
+        if not (story.public or request.user in writers_queryset):
+            return render(request, self.template_name, {'doesnt_exist': True})
+
+        if request.user in writers_queryset:
+            self.context['editable'] = True
+            storywriter = StoryWriter.objects.filter(
+                story=story
+            ).filter(writer=request.user)[0]
+            self.context['storywriter'] = storywriter
+        else:
+            self.context['editable'] = False
+
+        snippets = Snippet.objects.filter(story=story)
+        self.context['snippets'] = snippets
+
         return render(request, self.template_name, self.context)
