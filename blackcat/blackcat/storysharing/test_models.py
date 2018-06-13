@@ -9,7 +9,8 @@ class StoryTest(TestCase):
         expected_fields = {
             'title': models.CharField,
             'writers': models.ManyToManyField,
-            'public': models.BooleanField
+            'public': models.BooleanField,
+            'available': models.BooleanField
         }
 
         for field in expected_fields:

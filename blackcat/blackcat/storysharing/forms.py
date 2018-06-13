@@ -1,6 +1,6 @@
 from django.contrib.admin.widgets import FilteredSelectMultiple
-from django.forms import ModelForm
-from .models import Story
+from django.forms import ModelForm, HiddenInput, CheckboxInput
+from .models import Story, StoryWriter
 
 
 class StartStoryForm(ModelForm):
@@ -20,3 +20,14 @@ class StartStoryForm(ModelForm):
         widgets = {'writers': FilteredSelectMultiple(
             verbose_name="writers", is_stacked=False
         )}
+
+
+class StoryWriterActiveForm(ModelForm):
+
+    class Meta:
+        model = StoryWriter
+        fields = ("story", "active")
+        widgets = {
+            "story": HiddenInput(),
+            "active": CheckboxInput(attrs={'onclick': 'this.form.submit();'})
+        }

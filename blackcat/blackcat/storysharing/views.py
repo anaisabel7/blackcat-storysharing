@@ -7,28 +7,50 @@ from django.template import loader
 from django.urls import reverse
 from django.utils.decorators import method_decorator
 from django.views.generic import ListView, View
-from .models import Story
-from .forms import StartStoryForm
+from .models import Story, StoryWriter
+from .forms import StartStoryForm, StoryWriterActiveForm
 
 
-class StoryListMixin(ListView):
+class PublicStoriesView(ListView):
     model = Story
-
-
-class PublicStoriesView(StoryListMixin):
+    template_name = 'storysharing/public_stories.html'
 
     def get_queryset(self):
         return Story.objects.filter(public=True)
 
 
-class PersonalStoriesView(StoryListMixin):
+class PersonalStoriesView(ListView):
+    model = StoryWriter
+    template_name = 'storysharing/personal_stories.html'
+    form_name = StoryWriterActiveForm
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context['form'] = self.form_name()
+        return context
+
+    def post(self, request, *args, **kwargs):
+        self.object_list = self.get_queryset()
+        context = self.get_context_data(**kwargs)
+
+        form = self.form_name(request.POST)
+        if form.is_valid():
+            print(form.cleaned_data)
+            story = form.cleaned_data['story']
+            storywriter = StoryWriter.objects.filter(
+                story=story
+            ).filter(writer=request.user)[0]
+            storywriter.active = form.cleaned_data['active']
+            storywriter.save()
+
+        return self.render_to_response(context)
 
     @method_decorator(login_required)
     def dispatch(self, *args, **kwargs):
         return super().dispatch(*args, **kwargs)
 
     def get_queryset(self):
-        return Story.objects.filter(writers__username__in=[self.request.user])
+        return StoryWriter.objects.filter(writer=self.request.user)
 
 
 class StartStoryView(View):
@@ -37,10 +59,19 @@ class StartStoryView(View):
     form_name = StartStoryForm
 
     def send_email_to_writers(self, user, story):
+        body = "You've been addded to a story created by {}.\n".format(
+            user.username) + "If you wish to be part of it, visit {} ".format(
+            SITE_DOMAIN + reverse('personal')
+            ) + "to manage your list of active stories. {}".format(
+            "You can do that anytime.\n\n"
+            ) + "As long as you keep the story 'inactive', {}".format(
+            "you won't receive emails regarding its progress."
+            ) + "You can only take part in the stories you set as active.\n\n"
+        body = body + "Kindly, the {} team".format(SITE_DOMAIN)
         for writer in story.writers.get_queryset():
             send_mail(
                 "News from Black Cat Story Sharing",
-                "There is a new story",
+                body,
                 EMAIL_HOST_USER,
                 [writer.email]
             )
@@ -63,9 +94,10 @@ class StartStoryView(View):
                 title=title,
                 public=public
             )
-            story.writers.set(form.cleaned_data['writers'])
-            if request.user not in story.writers.get_queryset():
-                story.writers.add(request.user)
+            for writer in form.cleaned_data['writers']:
+                StoryWriter.objects.create(story=story, writer=writer)
+            if request.user not in form.cleaned_data['writers']:
+                StoryWriter.objects.create(story=story, writer=request.user)
             self.send_email_to_writers(request.user, story)
             return HttpResponseRedirect(
                 reverse('display_story', kwargs={'id': story.id})

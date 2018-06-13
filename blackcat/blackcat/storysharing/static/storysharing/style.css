@@ -95,6 +95,24 @@ body {
     color: #ccccff;
 }
 
+/* Story list */
+
+.main .listlinks {
+    font-size: 18px;
+}
+
+.main .lisklinks a:link {
+    color: #ccccff;
+}
+
+.main .listlinks a:visited {
+    color: #ccccff;
+}
+
+.main .listlinks a:hover {
+    color: #a8a8d7;
+}
+
 /* General */
 
 .main {

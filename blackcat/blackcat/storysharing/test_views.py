@@ -1,7 +1,7 @@
 from django.contrib.auth import login
 from django.urls import reverse
 from django.test import TestCase
-from .models import User, Story
+from .models import User, Story, StoryWriter
 from .urls import urlpatterns
 
 
@@ -46,7 +46,7 @@ class PublicStoriesViewTest(TestCase):
         self.assertContains(response, "Stories")
         story = Story.objects.create(title="Wonderful Story")
         user = create_random_user()
-        story.writers.add(user)
+        StoryWriter.objects.create(story=story, writer=user)
         private_story_response = self.client.get(reverse('stories'))
         self.assertEqual(
             str(response.content),
@@ -57,7 +57,7 @@ class PublicStoriesViewTest(TestCase):
         response = self.client.get(reverse('stories'))
         story = Story.objects.create(title="Wonderful Story", public=True)
         user = create_random_user()
-        story.writers.add(user)
+        StoryWriter.objects.create(story=story, writer=user)
         public_story_response = self.client.get(reverse('stories'))
         self.assertNotEqual(
             str(response.content),
@@ -76,12 +76,12 @@ class PersonalStoriesViewTest(TestCase):
         user = create_random_user()
         self.client.login(username=user.username, password='password')
         story = Story.objects.create(title="A story my user wrote.")
-        story.writers.add(user)
+        StoryWriter.objects.create(story=story, writer=user)
         other_user = User.objects.create(
             username='otheruser', email="an@email.com"
         )
         other_story = Story.objects.create(title="Other story")
-        other_story.writers.add(other_user)
+        StoryWriter.objects.create(story=other_story, writer=other_user)
         response = self.client.get(reverse('personal'))
         self.assertContains(response, "Stories")
         self.assertContains(response, story.title)
