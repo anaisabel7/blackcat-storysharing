@@ -22,7 +22,10 @@
                     <p class="author">- by {{ snippet.author }}</p>
                 </div>
             {% endfor %}
-            {% if editable %}
+            {% if not snippets %}
+                <p class="links">This story is still empty!</p>
+            {% endif %}
+            {% if form and storywriter.active and story.available %}
                 <form method="post">
                     {% csrf_token %}
                     <div class="snippetform">
@@ -37,6 +40,8 @@
                         <input type="submit" value="Add Snippet">
                     </div>
                 </form>
+            {% elif storywriter.active and story.available and not form %}
+                <p class="links">Thank you for adding your snippet! Wait for one of the other writers to add theirs...</p>
             {% endif %}
         {% endif %}
     </div>

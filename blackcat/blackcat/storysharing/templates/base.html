@@ -3,19 +3,21 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <link rel="stylesheet" type="text/css" href="{% static 'storysharing/style.css' %}">
 
-{% block content %}
-{% endblock %}
-{% block menu %}
-<div class='menu'>
-    <p>
-        <span><a href="{% url 'index' %}">Home</a></span>
-        <span><a href="{% url 'stories' %}">Public Stories</a></span>
-        <span><a href="{% url 'personal' %}">Your Stories</a></span>
-        {% if user.is_authenticated %}
-            <span><a href="{% url 'profile' %}">{{ user.username|title }}</a></span>
-        {% else %}
-            <span><a href="{% url 'login' %}">Log In</a></span>
-        {% endif %}
-    </p>
+<div class="wrapper">
+    {% block content %}
+    {% endblock %}
+    {% block menu %}
+    <div class='menu'>
+        <p>
+            <span><a href="{% url 'index' %}">Home</a></span>
+            <span><a href="{% url 'stories' %}">Public Stories</a></span>
+            <span><a href="{% url 'personal' %}">Your Stories</a></span>
+            {% if user.is_authenticated %}
+                <span><a href="{% url 'profile' %}">{{ user.username|title }}</a></span>
+            {% else %}
+                <span><a href="{% url 'login' %}">Log In</a></span>
+            {% endif %}
+        </p>
+    </div>
+    {% endblock %}
 </div>
-{% endblock %}

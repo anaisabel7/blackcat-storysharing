@@ -136,20 +136,27 @@ class DisplayStoryView(View):
         if not (story.public or request.user in writers_queryset):
             return render(request, self.template_name, {'doesnt_exist': True})
 
+        snippets = Snippet.objects.filter(story=story)
+        self.context['snippets'] = snippets
+
         if request.user in writers_queryset:
             self.context['editable'] = True
             storywriter = StoryWriter.objects.filter(
                 story=story
             ).filter(writer=request.user)[0]
             self.context['storywriter'] = storywriter
+
             form = self.form_name()
+
+            last_snippet = snippets.last()
+
+            if last_snippet and last_snippet.author == request.user:
+                    form = False
+
             self.context['form'] = form
 
         else:
             self.context['editable'] = False
-
-        snippets = Snippet.objects.filter(story=story)
-        self.context['snippets'] = snippets
 
         return render(request, self.template_name, self.context)
 
@@ -166,7 +173,7 @@ class DisplayStoryView(View):
                 author=request.user,
                 text=snippet_text
             )
-            form = self.form_name()
+            form = False
 
         post_context = {
             "story": story,
