@@ -8,7 +8,7 @@ from django.urls import reverse
 from django.utils.decorators import method_decorator
 from django.views.generic import ListView, View
 from .models import Story, StoryWriter, Snippet
-from .forms import StartStoryForm, StoryWriterActiveForm
+from .forms import StartStoryForm, StoryWriterActiveForm, CreateSnippetForm
 
 
 class PublicStoriesView(ListView):
@@ -121,6 +121,7 @@ class StartStoryView(View):
 
 class DisplayStoryView(View):
     template_name = "storysharing/display_story.html"
+    form_name = CreateSnippetForm
     context = {}
 
     def get(self, request, *args, **kwargs):
@@ -141,10 +142,39 @@ class DisplayStoryView(View):
                 story=story
             ).filter(writer=request.user)[0]
             self.context['storywriter'] = storywriter
+            form = self.form_name()
+            self.context['form'] = form
+
         else:
             self.context['editable'] = False
 
         snippets = Snippet.objects.filter(story=story)
         self.context['snippets'] = snippets
+
+        return render(request, self.template_name, self.context)
+
+    def post(self, request, *args, **kwargs):
+
+        form = self.form_name(request.POST)
+
+        story = Story.objects.filter(id=kwargs['id'])[0]
+
+        if form.is_valid():
+            snippet_text = form.cleaned_data['text']
+            Snippet.objects.create(
+                story=story,
+                author=request.user,
+                text=snippet_text
+            )
+            form = self.form_name()
+
+        post_context = {
+            "story": story,
+            "editable": True,
+            "snippets": Snippet.objects.filter(story=story),
+            "form": form
+        }
+
+        self.context.update(post_context)
 
         return render(request, self.template_name, self.context)

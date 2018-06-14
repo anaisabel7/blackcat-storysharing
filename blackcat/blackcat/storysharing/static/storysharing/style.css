@@ -66,11 +66,10 @@ body {
     color: #00001a;
     border-top: 4px double #00001a;
     padding-bottom: 15px;
-    padding-top: 4px;
-    position: absolute;
-    bottom: 0px;
+    padding-top: 15px;
+    position: relative;
+    bottom: -5px;
     width: 100%;
-    left: 0px;
     text-align: center;
     font-weight: bold;
 }
@@ -113,6 +112,36 @@ body {
     color: #a8a8d7;
 }
 
+/* Display Story */
+
+.main .snippet {
+    padding: 0 20px;
+    background: #ccccff;
+    border: 3px solid red;
+}
+
+.main .snippet .text {
+    font-weight: bold;
+    color: #00001a;
+}
+
+.main .snippet .author {
+    color: red;
+}
+
+.main .snippetform {
+    color: red;
+}
+
+.main .snippetform textarea {
+    width: 100%;
+    font-size: 18px;
+    font-family: inherit;
+    padding: 10px;
+    margin-bottom: 10px;
+}
+
+
 /* General */
 
 .main {
@@ -132,7 +161,6 @@ body {
 }
 
 .main .links {
-    color: #1e1e41;
     font-size: 18px;
 }
 

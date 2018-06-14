@@ -10,18 +10,34 @@
             <p class="header">{{ story.title|title }}</p>
             {% if editable %}
                 {% if not storywriter.active %}
-                    <p class="links">You have not set this story as active. If you want to play here, visit <a href="{% url 'personal' %}">your personal stories</a> and set it as active.</p>
+                    <p class="links">If you want to play here, visit <a href="{% url 'personal' %}">your personal stories</a> and set it as active.</p>
                 {% endif %}
                 {% if not story.available %}
-                    <p class="links">This story is unavailable.</p>
-                    <p class="links">Our game cannot be played on here yet!</p>
-                    <p class="links">It will remain this way until two or more writers of this story set it as active on their list of personal stories.</p>
+                    <p class="links">This story is unavailable. Our game cannot be played on here yet! It will remain this way until two or more writers of this story set it as active on their list of personal stories.</p>
                 {% endif %}
             {% endif %}
             {% for snippet in snippets %}
-                <p class="text">{{ snippet.text }}</p>
-                <p class="text">- by {{ snippet.author }}</p>
+                <div class="snippet">
+                    <p class="text">{{ snippet.text }}</p>
+                    <p class="author">- by {{ snippet.author }}</p>
+                </div>
             {% endfor %}
+            {% if editable %}
+                <form method="post">
+                    {% csrf_token %}
+                    <div class="snippetform">
+                        <p class=links>Add New Snippet</p>
+                        <input type="hidden" name="story" value="{{ story.id }}">
+                        <input type="hidden" name="author" value="{{ user.id }}">
+                        <div>
+                            <p>{{ form.text.label_tag }}</p>
+                            {{ form.text.errors }}
+                            {{ form.text }}
+                        </div>
+                        <input type="submit" value="Add Snippet">
+                    </div>
+                </form>
+            {% endif %}
         {% endif %}
     </div>
 {% endblock %}
