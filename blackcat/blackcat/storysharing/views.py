@@ -11,6 +11,31 @@ from .models import Story, StoryWriter, Snippet, User
 from .forms import StartStoryForm, StoryWriterActiveForm, CreateSnippetForm
 
 
+class EmailActiveWritersMixin(object):
+
+    def send_email_to_active_writers(self, story, update):
+        body = "We've got an update regarding your story \"{}\":\n{}\n".format(
+            story.title.title(), update
+        ) + "You can visit your story here: {}\n".format(
+            SITE_DOMAIN + reverse('display_story', kwargs={'id': story.id})
+        ) + "If you don't want to receive updates about this story, {}".format(
+            "set it as inactive in your personal stories here: {}\n".format(
+                SITE_DOMAIN + reverse('personal')
+            )
+        ) + "Kindly, the {} team.".format(SITE_DOMAIN)
+
+        send_to = [
+            x.writer.email for x in StoryWriter.objects.filter(
+                story=story).filter(active=True)
+        ]
+        send_mail(
+            "Black Cat Story Sharing - Update",
+            body,
+            EMAIL_HOST_USER,
+            send_to
+        )
+
+
 class PublicStoriesView(ListView):
     model = Story
     template_name = 'storysharing/public_stories.html'
@@ -19,7 +44,7 @@ class PublicStoriesView(ListView):
         return Story.objects.filter(public=True)
 
 
-class PersonalStoriesView(ListView):
+class PersonalStoriesView(ListView, EmailActiveWritersMixin):
     model = StoryWriter
     template_name = 'storysharing/personal_stories.html'
     form_name = StoryWriterActiveForm
@@ -30,6 +55,10 @@ class PersonalStoriesView(ListView):
 
         if no_active_writers >= 2:
             story.available = True
+            self.send_email_to_active_writers(
+                story=story,
+                update="The story is now available to play."
+            )
         else:
             story.available = False
         story.save()
@@ -81,7 +110,7 @@ class StartStoryView(View):
         body = body + "Kindly, the {} team".format(SITE_DOMAIN)
         for writer in story.writers.get_queryset():
             send_mail(
-                "News from Black Cat Story Sharing",
+                "Black Cat Story Sharing - News",
                 body,
                 EMAIL_HOST_USER,
                 [writer.email]
@@ -126,7 +155,7 @@ class StartStoryView(View):
         return render(request, self.template_name, self.context)
 
 
-class DisplayStoryView(View):
+class DisplayStoryView(View, EmailActiveWritersMixin):
     template_name = "storysharing/display_story.html"
     form_name = CreateSnippetForm
     context = {}
@@ -181,6 +210,10 @@ class DisplayStoryView(View):
                 text=snippet_text
             )
             form = False
+            self.send_email_to_active_writers(
+                story=story,
+                update="A new Snippet has been added to the story."
+            )
 
         post_context = {
             "story": story,
