@@ -20,6 +20,10 @@ class StartStoryForm(ModelForm):
         widgets = {'writers': FilteredSelectMultiple(
             verbose_name="writers", is_stacked=False
         )}
+        help_texts = {
+            "writers":
+                "(Choose others to play with. You will be included as a writer as well.)"
+        }
 
 
 class StoryWriterActiveForm(ModelForm):

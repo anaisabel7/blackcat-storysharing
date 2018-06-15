@@ -7,7 +7,7 @@ from django.template import loader
 from django.urls import reverse
 from django.utils.decorators import method_decorator
 from django.views.generic import ListView, View
-from .models import Story, StoryWriter, Snippet
+from .models import Story, StoryWriter, Snippet, User
 from .forms import StartStoryForm, StoryWriterActiveForm, CreateSnippetForm
 
 
@@ -93,6 +93,9 @@ class StartStoryView(View):
 
     def get(self, request, *args, **kwargs):
         form = self.form_name()
+        form.fields['writers'].queryset = User.objects.exclude(
+            username=request.user.username
+        )
         self.context['form'] = form
         return render(request, self.template_name, self.context)
 
@@ -105,16 +108,20 @@ class StartStoryView(View):
                 title=title,
                 public=public
             )
+
+            StoryWriter.objects.create(story=story, writer=request.user)
             for writer in form.cleaned_data['writers']:
                 StoryWriter.objects.create(story=story, writer=writer)
-            if request.user not in form.cleaned_data['writers']:
-                StoryWriter.objects.create(story=story, writer=request.user)
+
             self.send_email_to_writers(request.user, story)
             return HttpResponseRedirect(
                 reverse('display_story', kwargs={'id': story.id})
             )
 
         self.context['errors'] = True
+        form.fields['writers'].queryset = User.objects.exclude(
+            username=request.user.username
+        )
         self.context['form'] = form
         return render(request, self.template_name, self.context)
 
