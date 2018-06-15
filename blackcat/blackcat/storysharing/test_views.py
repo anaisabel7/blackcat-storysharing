@@ -1,8 +1,11 @@
+from blackcat.settings import SITE_DOMAIN, EMAIL_HOST_USER
 from django.contrib.auth import login
 from django.urls import reverse
 from django.test import TestCase
+from unittest.mock import patch
 from .models import User, Story, StoryWriter
 from .urls import urlpatterns
+from . import views
 
 
 def create_random_user():
@@ -172,6 +175,41 @@ class StartStoryViewTest(TestCase):
         response = self.client.get(reverse('start_story'))
         self.assertRedirects(
             response, reverse('login') + '?next=' + reverse('start_story')
+        )
+
+
+class EmailActiveWritersMixinTest(TestCase):
+
+    @patch.object(views, 'send_mail')
+    def test_email_sent_correctly(self, send_mail_mock):
+        user = create_random_user()
+        other_user = User.objects.create(
+            username="otheruser", email="other@email.com"
+        )
+        story = Story.objects.create(title="Awesome Story")
+        StoryWriter.objects.create(story=story, writer=user, active=True)
+        StoryWriter.objects.create(story=story, writer=other_user)
+
+        update = "Beautiful Update"
+        views.EmailActiveWritersMixin().send_email_to_active_writers(
+            story=story,
+            update=update
+        )
+        body = "We've got an update regarding your story \"{}\":\n{}\n".format(
+            story.title.title(), update
+        ) + "You can visit your story here: {}\n".format(
+            SITE_DOMAIN + reverse('display_story', kwargs={'id': story.id})
+        ) + "If you don't want to receive updates about this story, {}".format(
+            "set it as inactive in your personal stories here: {}\n".format(
+                SITE_DOMAIN + reverse('personal')
+            )
+        ) + "Kindly, the {} team.".format(SITE_DOMAIN)
+
+        send_mail_mock.assert_called_with(
+            "Black Cat Story Sharing - Update",
+            body,
+            EMAIL_HOST_USER,
+            [user.email]
         )
 
 
