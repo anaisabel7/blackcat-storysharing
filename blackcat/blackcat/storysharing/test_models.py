@@ -1,6 +1,6 @@
 from django.db import models
 from django.test import TestCase
-from .models import Story, Snippet, User
+from .models import Story, Snippet, User, StoryWriter
 
 
 class StoryTest(TestCase):
@@ -25,6 +25,7 @@ class StoryTest(TestCase):
         self.assertEqual(Story._meta.get_field('title').max_length, 100)
 
         self.assertEqual(Story._meta.get_field('writers').related_model, User)
+        self.assertTrue(hasattr(Story, 'storywriter_set'))
 
         self.assertEqual(Story._meta.get_field('public').default, False)
 
@@ -67,3 +68,40 @@ class SnippetTest(TestCase):
         )
 
         self.assertEqual(Snippet._meta.get_field('text').max_length, 1000)
+
+
+class StoryWriterTest(TestCase):
+
+    def test_fields(self):
+        expected_fields = {
+            "story": models.ForeignKey,
+            "writer": models.ForeignKey,
+            "active": models.BooleanField
+        }
+
+        for field in expected_fields:
+            self.assertTrue(hasattr(StoryWriter, field))
+            self.assertTrue(isinstance(
+                StoryWriter._meta.get_field(field),
+                expected_fields[field]
+            ))
+
+        self.assertEqual(StoryWriter._meta.get_field('active').default, False)
+
+        self.assertEqual(
+            StoryWriter._meta.get_field('story').related_model,
+            Story
+        )
+        self.assertEqual(
+            StoryWriter._meta.get_field('story').remote_field.on_delete,
+            models.CASCADE
+        )
+
+        self.assertEqual(
+            StoryWriter._meta.get_field('writer').related_model,
+            User
+        )
+        self.assertEqual(
+            StoryWriter._meta.get_field('writer').remote_field.on_delete,
+            models.CASCADE
+        )
