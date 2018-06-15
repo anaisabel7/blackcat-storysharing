@@ -109,9 +109,13 @@ class StartStoryViewTest(TestCase):
     def test_post_correct_form(self):
         user = create_random_user()
         self.client.login(username=user.username, password="password")
+        another_user = User.objects.create(
+            username="otheruser",
+            email='other@email.com'
+        )
         post_data = {
             'title': "A story title",
-            'writers': [user.id],
+            'writers': [another_user.id],
             'public': True
         }
         self.assertEqual(
@@ -122,8 +126,9 @@ class StartStoryViewTest(TestCase):
             Story.objects.filter(title="A story title").count(), 1
         )
         story = Story.objects.filter(title="A story title")[0]
-        self.assertEqual(story.writers.count(), 1)
-        self.assertEqual(story.writers.all()[0], user)
+        self.assertEqual(story.writers.count(), 2)
+        self.assertIn(user, story.writers.all())
+        self.assertIn(another_user, story.writers.all())
         self.assertEqual(story.public, True)
         self.assertRedirects(
             response,
