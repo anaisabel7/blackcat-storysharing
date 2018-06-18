@@ -28,12 +28,13 @@ class EmailActiveWritersMixin(object):
             x.writer.email for x in StoryWriter.objects.filter(
                 story=story).filter(active=True)
         ]
-        send_mail(
-            "Black Cat Story Sharing - Update",
-            body,
-            EMAIL_HOST_USER,
-            send_to
-        )
+        for email in send_to:
+            send_mail(
+                "Black Cat Story Sharing - Update",
+                body,
+                EMAIL_HOST_USER,
+                [email]
+            )
 
 
 class PublicStoriesView(ListView):
@@ -49,19 +50,20 @@ class PersonalStoriesView(ListView, EmailActiveWritersMixin):
     template_name = 'storysharing/personal_stories.html'
     form_name = StoryWriterActiveForm
 
-    def set_active_story(self, story):
+    def set_available_story(self, story):
         no_active_writers = StoryWriter.objects.filter(
             story=story).filter(active=True).count()
 
         if no_active_writers >= 2:
             story.available = True
+            story.save()
             self.send_email_to_active_writers(
                 story=story,
                 update="The story is now available to play."
             )
         else:
             story.available = False
-        story.save()
+            story.save()
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
@@ -74,14 +76,13 @@ class PersonalStoriesView(ListView, EmailActiveWritersMixin):
 
         form = self.form_name(request.POST)
         if form.is_valid():
-            print(form.cleaned_data)
             story = form.cleaned_data['story']
             storywriter = StoryWriter.objects.filter(
                 story=story
             ).filter(writer=request.user)[0]
             storywriter.active = form.cleaned_data['active']
             storywriter.save()
-            self.set_active_story(storywriter.story)
+            self.set_available_story(storywriter.story)
 
         return self.render_to_response(context)
 
@@ -214,6 +215,8 @@ class DisplayStoryView(View, EmailActiveWritersMixin):
                 story=story,
                 update="A new Snippet has been added to the story."
             )
+        else:
+            self.context.update({'form_errors': True})
 
         post_context = {
             "story": story,

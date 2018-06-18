@@ -30,6 +30,9 @@
                     {% csrf_token %}
                     <div class="snippetform">
                         <p class=links>Add New Snippet</p>
+                        {% if form_errors %}
+                            <p>Problems found when trying to add the snippet. You can try again.</p>
+                        {% endif %}
                         <input type="hidden" name="story" value="{{ story.id }}">
                         <input type="hidden" name="author" value="{{ user.id }}">
                         <div>
