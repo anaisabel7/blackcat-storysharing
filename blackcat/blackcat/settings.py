@@ -11,6 +11,8 @@ https://docs.djangoproject.com/en/2.0/ref/settings/
 """
 
 import os
+from . import production_secrets
+from . import email_settings
 
 # Build paths inside the project like this: os.path.join(BASE_DIR, ...)
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
@@ -22,10 +24,20 @@ BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 # SECURITY WARNING: keep the secret key used in production secret!
 SECRET_KEY = 'ikg@ri+&yk-_3+611#3cr&lr)1(a5q7zv$^v8l2%4*)i$zrz#e'
 
-# SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
-
 ALLOWED_HOSTS = []
+
+# SECURITY WARNING: don't run with debug turned on in production!
+DEBUG = False
+
+if not DEBUG:
+    SECRET_KEY = production_secrets.secret_key
+    SECURE_CONTENT_TYPE_NOSNIFF = True
+    SECURE_BROWSER_XSS_FILTER = True
+    SECURE_SSL_REDIRECT = True
+    SESSION_COOKIE_SECURE = True
+    CSRF_COOKIE_SECURE = True
+    X_FRAME_OPTIONS = 'DENY'
+    ALLOWED_HOSTS = ['*']
 
 
 # Application definition
@@ -137,8 +149,6 @@ LOGIN_REDIRECT_URL = 'index'
 SITE_DOMAIN = "."
 
 # Email settings
-
-from . import email_settings
 
 EMAIL_USE_TLS = True
 EMAIL_HOST = 'smtp.gmail.com'
