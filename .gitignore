@@ -8,3 +8,4 @@ blackcat/blackcat/__pycache__/
 blackcat/blackcat/storysharing/__pycache__/
 blackcat/blackcat/storysharing/migrations/__pycache__/
 blackcat/blackcat/email_settings.py
+blackcat/blackcat/production_secrets.py

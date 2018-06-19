@@ -1,0 +1,20 @@
+################################################################################
+# This requirements file has been automatically generated from `Pipfile` with
+# `pipenv-to-requirements`
+#
+#
+# This has been done to maintain backward compatibility with tools and services
+# that do not support `Pipfile` yet.
+#
+# Do NOT edit it directly, use `pipenv install [-d]` to modify `Pipfile` and
+# `Pipfile.lock` and then regenerate `requirements*.txt`.
+################################################################################
+
+certifi==2018.4.16
+django==2.0.3
+pbr==4.0.4
+pipenv-to-requirements==0.4.1
+pipenv==2018.5.18
+pytz==2018.4
+virtualenv-clone==0.3.0
+virtualenv==16.0.0
