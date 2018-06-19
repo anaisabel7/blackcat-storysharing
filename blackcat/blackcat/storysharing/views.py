@@ -127,6 +127,7 @@ class StartStoryView(View):
             username=request.user.username
         )
         self.context['form'] = form
+        self.context['errors'] = False
         return render(request, self.template_name, self.context)
 
     def post(self, request, *args, **kwargs):
