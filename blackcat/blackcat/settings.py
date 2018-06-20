@@ -105,6 +105,19 @@ DATABASES = {
     }
 }
 
+if not DEBUG:
+
+    DATABASES = {
+        'default': {
+            'ENGINE': 'postgresql',
+            'NAME': 'blackcatdb',
+            'USER': 'blackcat',
+            'PASSWORD': 'alleyway',
+            'HOST': 'localhost',
+            'PORT': '',
+        }
+    }
+
 
 # Password validation
 # https://docs.djangoproject.com/en/2.0/ref/settings/#auth-password-validators
