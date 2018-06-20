@@ -175,5 +175,8 @@ EMAIL_HOST = 'smtp.gmail.com'
 if DEBUG:
     EMAIL_HOST_USER = email_settings.email
     EMAIL_HOST_PASSWORD = email_settings.password
+else:
+    EMAIL_HOST_USER = 'dummy@email.com'
+    EMAIL_HOST_PASSWORD = 'password'
 
 EMAIL_PORT = 587
