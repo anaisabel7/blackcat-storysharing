@@ -20,7 +20,7 @@ def create_random_user():
 class IndexViewTest(TestCase):
 
     def test_base_content(self):
-        response = self.client.get(reverse('index'))
+        response = self.client.get(reverse('index'), secure=True)
         self.assertContains(response, "Welcome to")
         self.assertContains(response, "Black Cat")
         self.assertContains(response, "Story Sharing")
@@ -35,7 +35,7 @@ class IndexViewTest(TestCase):
     def test_content_change_for_logged_in_user(self):
         user = create_random_user()
         self.client.login(username=user.username, password='password')
-        response = self.client.get(reverse('index'))
+        response = self.client.get(reverse('index'), secure=True)
         self.assertNotIn(
             "Create a user / Log in to start playing!", str(response.content)
         )
@@ -45,23 +45,25 @@ class IndexViewTest(TestCase):
 
 class PublicStoriesViewTest(TestCase):
     def test_content_without_public_stories(self):
-        response = self.client.get(reverse('stories'))
+        response = self.client.get(reverse('stories'), secure=True)
         self.assertContains(response, "Stories")
         story = Story.objects.create(title="Wonderful Story")
         user = create_random_user()
         StoryWriter.objects.create(story=story, writer=user)
-        private_story_response = self.client.get(reverse('stories'))
+        private_story_response = self.client.get(
+            reverse('stories'), secure=True)
         self.assertEqual(
             str(response.content),
             str(private_story_response.content)
         )
 
     def test_content_with_public_stories(self):
-        response = self.client.get(reverse('stories'))
+        response = self.client.get(reverse('stories'), secure=True)
         story = Story.objects.create(title="Wonderful Story", public=True)
         user = create_random_user()
         StoryWriter.objects.create(story=story, writer=user)
-        public_story_response = self.client.get(reverse('stories'))
+        public_story_response = self.client.get(
+            reverse('stories'), secure=True)
         self.assertNotEqual(
             str(response.content),
             str(public_story_response.content)
@@ -86,9 +88,11 @@ class PersonalStoriesViewTest(TestCase):
 
     def test_login_required(self):
         self.client.logout()
-        response = self.client.get(reverse('personal'))
-        self.assertRedirects(
-            response, reverse('login') + '?next=' + reverse('personal')
+        response = self.client.get(
+            reverse('personal'), follow=True, secure=True)
+        self.assertEqual(
+            response.redirect_chain[0][0],
+            reverse('login') + '?next=' + reverse('personal')
         )
 
     def test_displaying_stories_writen_by_user_only(self):
@@ -101,7 +105,7 @@ class PersonalStoriesViewTest(TestCase):
         )
         other_story = Story.objects.create(title="Other story")
         StoryWriter.objects.create(story=other_story, writer=other_user)
-        response = self.client.get(reverse('personal'))
+        response = self.client.get(reverse('personal'), secure=True)
         self.assertContains(response, "Stories")
         self.assertContains(response, story.title)
         self.assertContains(response, user.username)
@@ -110,7 +114,7 @@ class PersonalStoriesViewTest(TestCase):
 
     def display_as_many_StoryWriterActiveForms_as_stories(self):
         self.create_two_stories_first_active()
-        response = self.client.get(reverse('personal'))
+        response = self.client.get(reverse('personal'), secure=True)
         content_chunks = str(response.content).split("</form>")
         content_chunks = content_chunks[:-1]
         self.assertEqual(len(content_chunks), 2)
@@ -133,7 +137,9 @@ class PersonalStoriesViewTest(TestCase):
             'active': False
         }
 
-        response = self.client.post(reverse('personal'), data=post_data)
+        response = self.client.post(
+            reverse('personal'), secure=True, data=post_data
+        )
         storywriter = StoryWriter.objects.filter(
             story__title=story_one.title).filter(writer=user)[0]
         self.assertEqual(storywriter.active, False)
@@ -164,7 +170,9 @@ class PersonalStoriesViewTest(TestCase):
             'active': True
         }
 
-        response = self.client.post(reverse('personal'), data=post_data)
+        response = self.client.post(
+            reverse('personal'), secure=True, data=post_data
+        )
         no_active_writers = StoryWriter.objects.filter(
             story=story_one).filter(active=True).count()
         self.assertEqual(no_active_writers, 1)
@@ -173,7 +181,9 @@ class PersonalStoriesViewTest(TestCase):
 
         self.client.login(username=other_user.username, password="password")
 
-        response = self.client.post(reverse('personal'), data=post_data)
+        response = self.client.post(
+            reverse('personal'), secure=True, data=post_data
+        )
         no_active_writers = StoryWriter.objects.filter(
             story=story_one).filter(active=True).count()
         self.assertEqual(no_active_writers, 2)
@@ -203,7 +213,8 @@ class DisplayStoryViewTest(TestCase):
             story=story
         )
         response = self.client.get(
-            reverse('display_story', kwargs={'id': story.id})
+            reverse('display_story', kwargs={'id': story.id}),
+            secure=True
         )
         self.assertContains(response, story.title)
         self.assertContains(response, text)
@@ -212,14 +223,16 @@ class DisplayStoryViewTest(TestCase):
     def test_displays_public_empty_story(self):
         story = Story.objects.create(title="Awesome Rodent", public=True)
         response = self.client.get(
-            reverse('display_story', kwargs={'id': story.id})
+            reverse('display_story', kwargs={'id': story.id}),
+            secure=True
         )
         self.assertContains(response, story.title)
         self.assertContains(response, "This story is still empty!")
 
     def test_displays_non_existent_story(self):
         response = self.client.get(
-            reverse('display_story', kwargs={'id': 1000})
+            reverse('display_story', kwargs={'id': 1000}),
+            secure=True
         )
         self.assertContains(response, "This story doesn't exist!")
         self.assertContains(
@@ -234,7 +247,8 @@ class DisplayStoryViewTest(TestCase):
         self.client.logout()
         story = Story.objects.create(title="What? This is private!")
         response = self.client.get(
-            reverse('display_story', kwargs={'id': story.id})
+            reverse('display_story', kwargs={'id': story.id}),
+            secure=True
         )
         self.assertContains(response, "This story doesn't exist!")
         self.assertContains(
@@ -251,7 +265,8 @@ class DisplayStoryViewTest(TestCase):
         writers_usernames = [x['username'] for x in story.writers.values()]
         self.assertNotIn(user.username, writers_usernames)
         response = self.client.get(
-            reverse('display_story', kwargs={'id': story.id})
+            reverse('display_story', kwargs={'id': story.id}),
+            secure=True
         )
         self.assertContains(response, "This story doesn't exist!")
         self.assertNotIn(story.title, str(response.content))
@@ -264,7 +279,8 @@ class DisplayStoryViewTest(TestCase):
         )
         self.client.login(username=user.username, password='password')
         response = self.client.get(
-            reverse('display_story', kwargs={'id': story.id})
+            reverse('display_story', kwargs={'id': story.id}),
+            secure=True
         )
         self.assertContains(response, story.title.title())
         self.assertContains(
@@ -278,7 +294,8 @@ class DisplayStoryViewTest(TestCase):
         storywriter = StoryWriter.objects.create(story=story, writer=user)
         self.client.login(username=user.username, password='password')
         response = self.client.get(
-            reverse('display_story', kwargs={'id': story.id})
+            reverse('display_story', kwargs={'id': story.id}),
+            secure=True
         )
         self.assertContains(response, story.title.title())
         self.assertContains(response, self.inactive_user_text)
@@ -290,7 +307,8 @@ class DisplayStoryViewTest(TestCase):
         self.client.login(username=user.username, password='password')
 
         response = self.client.get(
-            reverse('display_story', kwargs={'id': story.id})
+            reverse('display_story', kwargs={'id': story.id}),
+            secure=True
         )
         self.assertContains(response, "<form method=\"post\"")
         self.assertContains(response, "Add New Snippet")
@@ -318,7 +336,8 @@ class DisplayStoryViewTest(TestCase):
 
         self.client.login(username=user.username, password='password')
         response = self.client.get(
-            reverse('display_story', kwargs={'id': story.id})
+            reverse('display_story', kwargs={'id': story.id}),
+            secure=True
         )
         self.assertContains(
             response,
@@ -329,7 +348,8 @@ class DisplayStoryViewTest(TestCase):
 
         self.client.login(username=other_user.username, password='password')
         response = self.client.get(
-            reverse('display_story', kwargs={'id': story.id})
+            reverse('display_story', kwargs={'id': story.id}),
+            secure=True
         )
         self.assertContains(response, "<form method=\"post\"")
         self.assertContains(response, "Add New Snippet")
@@ -357,7 +377,7 @@ class DisplayStoryViewTest(TestCase):
 
         response = self.client.post(
             reverse('display_story', kwargs={'id': story.id}),
-            data=post_data
+            secure=True, data=post_data
         )
         story_snippets = Snippet.objects.filter(story=story)
         self.assertEqual(len(story_snippets), 1)
@@ -394,7 +414,7 @@ class DisplayStoryViewTest(TestCase):
 
         response = self.client.post(
             reverse('display_story', kwargs={'id': story.id}),
-            data=post_data
+            secure=True, data=post_data
         )
         self.assertContains(response, "<form method=\"post\"")
         self.assertContains(
@@ -410,7 +430,7 @@ class StartStoryViewTest(TestCase):
     def test_content(self):
         user = create_random_user()
         self.client.login(username=user.username, password="password")
-        response = self.client.get(reverse('start_story'))
+        response = self.client.get(reverse('start_story'), secure=True)
         self.assertContains(response, "-- Start a new story --")
         self.assertContains(response, "Title:")
         self.assertContains(response, "Writers:")
@@ -437,7 +457,10 @@ class StartStoryViewTest(TestCase):
         self.assertEqual(
             Story.objects.filter(title="A story title").count(), 0
         )
-        response = self.client.post(reverse('start_story'), data=post_data)
+        response = self.client.post(
+            reverse('start_story'), secure=True, data=post_data,
+            follow=True
+        )
         self.assertEqual(
             Story.objects.filter(title="A story title").count(), 1
         )
@@ -446,8 +469,8 @@ class StartStoryViewTest(TestCase):
         self.assertIn(user, story.writers.all())
         self.assertIn(another_user, story.writers.all())
         self.assertEqual(story.public, True)
-        self.assertRedirects(
-            response,
+        self.assertEqual(
+            response.redirect_chain[0][0],
             reverse('display_story', kwargs={'id': story.id})
         )
 
@@ -463,7 +486,9 @@ class StartStoryViewTest(TestCase):
             Story.objects.filter(title="Another story title").count(),
             0
         )
-        response = self.client.post(reverse('start_story'), data=post_data)
+        response = self.client.post(
+            reverse('start_story'), secure=True, data=post_data
+        )
         self.assertContains(response, "Title:")
         self.assertContains(response, "Writers:")
         self.assertContains(
@@ -485,9 +510,11 @@ class StartStoryViewTest(TestCase):
 
     def test_login_required(self):
         self.client.logout()
-        response = self.client.get(reverse('start_story'))
-        self.assertRedirects(
-            response, reverse('login') + '?next=' + reverse('start_story')
+        response = self.client.get(
+            reverse('start_story'), follow=True, secure=True)
+        self.assertEqual(
+            response.redirect_chain[0][0],
+            reverse('login') + '?next=' + reverse('start_story')
         )
 
 
@@ -563,7 +590,7 @@ class BaseContentTest(TestCase):
 
         pages.remove('jsi18n')
         for page in pages:
-            response = self.client.get(reverse(page))
+            response = self.client.get(reverse(page), secure=True)
             for header in headers:
                 self.assertContains(
                     response,
@@ -572,7 +599,8 @@ class BaseContentTest(TestCase):
 
         story = Story.objects.create(title="Awesome story")
         response = self.client.get(
-            reverse('display_story', kwargs={'id': story.id})
+            reverse('display_story', kwargs={'id': story.id}),
+            secure=True
         )
         for header in headers:
             self.assertContains(
@@ -582,7 +610,7 @@ class BaseContentTest(TestCase):
 
         response = self.client.get(reverse(
             'reset_password', kwargs={'uidb64': 'NA', 'token': 'set-password'}
-        ))
+        ), secure=True)
         for header in headers:
             self.assertContains(
                 response,
@@ -601,7 +629,7 @@ class BaseContentTest(TestCase):
 
         pages.remove('jsi18n')
         for page in pages:
-            response = self.client.get(reverse(page))
+            response = self.client.get(reverse(page), secure=True)
             self.assertContains(response, "<div class='menu'>")
             self.assertContains(response, reverse('index'))
             self.assertContains(response, reverse('stories'))
@@ -614,9 +642,10 @@ class BaseContentTest(TestCase):
 
         story = Story.objects.create(title="Awesome story")
         response = self.client.get(
-            reverse('display_story', kwargs={'id': story.id})
+            reverse('display_story', kwargs={'id': story.id}),
+            secure=True
         )
-        response = self.client.get(reverse(page))
+        response = self.client.get(reverse(page), secure=True)
         self.assertContains(response, "<div class='menu'>")
         self.assertContains(response, reverse('index'))
         self.assertContains(response, reverse('stories'))
@@ -629,7 +658,7 @@ class BaseContentTest(TestCase):
 
         response = self.client.get(reverse(
             'reset_password', kwargs={'uidb64': 'NA', 'token': 'set-password'}
-        ))
+        ), secure=True)
         self.assertContains(response, "<div class='menu'>")
         self.assertContains(response, reverse('index'))
         self.assertContains(response, reverse('stories'))
@@ -641,7 +670,7 @@ class BaseContentTest(TestCase):
         self.assertContains(response, user.username.title())
 
         # User logged out menu content
-        response = self.client.get(reverse('logout'))
+        response = self.client.get(reverse('logout'), secure=True)
         self.assertContains(response, "<div class='menu'>")
         self.assertContains(response, reverse('index'))
         self.assertContains(response, reverse('stories'))
@@ -652,7 +681,7 @@ class BaseContentTest(TestCase):
         self.assertContains(response, "Your Stories")
         self.assertContains(response, "Log In")
 
-        response = self.client.get(reverse('index'))
+        response = self.client.get(reverse('index'), secure=True)
         self.assertContains(response, "<div class='menu'>")
         self.assertContains(response, reverse('index'))
         self.assertContains(response, reverse('stories'))

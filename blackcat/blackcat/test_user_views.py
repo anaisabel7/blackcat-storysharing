@@ -27,7 +27,7 @@ def get_password_warnings():
 class LoginViewTest(TestCase):
 
     def test_content(self):
-        response = self.client.get(reverse('login'))
+        response = self.client.get(reverse('login'), secure=True)
         self.assertContains(response, "-- Log in --")
         self.assertContains(response, "Username:")
         self.assertContains(response, "Password:")
@@ -45,7 +45,7 @@ class LoginViewTest(TestCase):
 class LogoutViewTest(TestCase):
 
     def test_content(self):
-        response = self.client.get(reverse('logout'))
+        response = self.client.get(reverse('logout'), secure=True)
         self.assertContains(response, "Thank you for logging out")
         self.assertContains(response, get_go_back_home_link())
 
@@ -53,7 +53,7 @@ class LogoutViewTest(TestCase):
 class LostPasswordViewTest(TestCase):
 
     def test_content(self):
-        response = self.client.get(reverse('lost_password'))
+        response = self.client.get(reverse('lost_password'), secure=True)
         self.assertContains(response, "-- Set a new password --")
         self.assertContains(response, "Email:")
         self.assertContains(
@@ -69,7 +69,7 @@ class LostPasswordViewTest(TestCase):
 class LostPasswordDoneViewTest(TestCase):
 
     def test_content(self):
-        response = self.client.get(reverse('lost_password_done'))
+        response = self.client.get(reverse('lost_password_done'), secure=True)
         self.assertContains(response, "Check your email (and spam folder).")
         self.assertContains(response, get_go_back_home_link())
 
@@ -79,7 +79,7 @@ class ChangePasswordViewTest(TestCase):
     def test_content(self):
         user = create_random_user()
         self.client.login(username=user.username, password="password")
-        response = self.client.get(reverse('change_password'))
+        response = self.client.get(reverse('change_password'), secure=True)
         self.assertContains(response, "Old password:")
         self.assertContains(response, "New password:")
         self.assertContains(response, "New password confirmation:")
@@ -94,7 +94,7 @@ class ChangePasswordViewTest(TestCase):
 
     def test_requries_login(self):
         self.client.logout()
-        response = self.client.get(reverse('change_password'))
+        response = self.client.get(reverse('change_password'), secure=True)
         self.assertEqual(response.status_code, 302)
 
 
@@ -103,7 +103,7 @@ class ChangePasswordDoneViewTest(TestCase):
     def test_content(self):
         user = create_random_user()
         self.client.login(username=user.username, password="password")
-        response = self.client.get(reverse('change_password_done'))
+        response = self.client.get(reverse('change_password_done'), secure=True)
         self.assertContains(response, "Thank you for changing your password")
         self.assertContains(response, get_go_back_home_link())
 
@@ -114,7 +114,7 @@ class ResetPasswordViewTest(TestCase):
         tmp_response = self.client.get(reverse('reset_password', kwargs={
             'uidb64': 'NA',
             'token': 'set-password'
-        }))
+        }), secure=True)
 
         context = tmp_response.context[0].flatten()
         context['validlink'] = True
@@ -129,7 +129,7 @@ class ResetPasswordViewTest(TestCase):
         response = self.client.get(reverse('reset_password', kwargs={
             'uidb64': 'NA',
             'token': 'set-password'
-        }))
+        }), secure=True)
         self.assertContains(response, "-- Invalid reset password link --")
         self.assertContains(response, "> Get a new reset password link <")
         self.assertContains(response, reverse('lost_password'))
@@ -138,7 +138,7 @@ class ResetPasswordViewTest(TestCase):
 class ResetPasswordDoneViewTest(TestCase):
 
     def test_content(self):
-        response = self.client.get(reverse('reset_password_done'))
+        response = self.client.get(reverse('reset_password_done'), secure=True)
         self.assertContains(response, "Your password has been reset")
         self.assertContains(response, get_go_back_home_link())
 
@@ -146,7 +146,7 @@ class ResetPasswordDoneViewTest(TestCase):
 class CreateUserViewTest(TestCase):
 
     def test_content(self):
-        response = self.client.get(reverse('create_user'))
+        response = self.client.get(reverse('create_user'), secure=True)
         self.assertContains(response, "-- Create a new user --")
         self.assertContains(response, "Email:")
         self.assertContains(response, "Username:")
@@ -163,7 +163,9 @@ class CreateUserViewTest(TestCase):
             "password1": "onepassword",
             "password2": "anotherpassword",
         }
-        response = self.client.post(reverse('create_user'), data=post_data)
+        response = self.client.post(
+            reverse('create_user'), secure=True, data=post_data
+        )
         self.assertContains(response, "-- Create a new user --")
         self.assertContains(response, "Email:")
         self.assertContains(response, "Username:")
@@ -188,9 +190,12 @@ class CreateUserViewTest(TestCase):
             ]
         }
         response = self.client.post(
-            reverse('create_user'), data=post_data, follow=True
+            reverse('create_user'), data=post_data, secure=True, follow=True
         )
-        self.assertRedirects(response, reverse('index'))
+        self.assertEqual(
+            response.redirect_chain[0][0],
+            reverse('index')
+        )
         self.assertEqual(User.objects.filter(username='randomuser').count(), 1)
 
         user = User.objects.filter(username='randomuser')[0]
@@ -208,7 +213,7 @@ class CreateUserViewTest(TestCase):
             username=prev_user.username, password='password'
         )
 
-        response = self.client.get(reverse('create_user'))
+        response = self.client.get(reverse('create_user'), secure=True)
 
         self.assertEqual(response.context['user'].username, prev_user.username)
 
@@ -223,7 +228,7 @@ class CreateUserViewTest(TestCase):
         }
 
         response = self.client.post(
-            reverse('create_user'), data=post_data, follow=True
+            reverse('create_user'), data=post_data, secure=True, follow=True
         )
 
         self.assertNotEqual(
@@ -232,7 +237,7 @@ class CreateUserViewTest(TestCase):
         self.assertEqual(response.context['user'].username, "randomuser")
 
     def test_never_cache(self):
-        request = RequestFactory().get(reverse('create_user'))
+        request = RequestFactory().get(reverse('create_user'), secure=True)
         response = CreateUserView().dispatch(request)
         self.assertTrue(response.has_header('cache-control'))
         no_cache_headers = [
@@ -242,7 +247,9 @@ class CreateUserViewTest(TestCase):
             self.assertIn(header, response._headers['cache-control'][1])
 
     def test_sensitive_post_parameters(self):
-        request = RequestFactory().post(reverse('create_user'), data={})
+        request = RequestFactory().post(
+            reverse('create_user'), secure=True, data={}
+        )
         CreateUserView().dispatch(request)
         self.assertEqual(
             request.sensitive_post_parameters,
@@ -254,7 +261,7 @@ class ProfileViewTest(TestCase):
     def test_content(self):
         user = create_random_user()
         self.client.login(username=user.username, password='password')
-        response = self.client.get(reverse('profile'))
+        response = self.client.get(reverse('profile'), secure=True)
         self.assertContains(response, "-- Your Profile --")
         self.assertContains(response, "Username:")
         self.assertContains(response, user.username.title())
@@ -282,7 +289,9 @@ class ProfileViewTest(TestCase):
             'username': user.username,
             'email': "another@email.com"
         }
-        response = self.client.post(reverse('profile'), data=post_data)
+        response = self.client.post(
+            reverse('profile'), secure=True, data=post_data
+        )
         self.assertContains(response, "Username:")
         self.assertContains(response, user.username.title())
         self.assertContains(response, "Email address:")
@@ -303,7 +312,9 @@ class ProfileViewTest(TestCase):
             'username': user.username,
             'email': "½nvÀl¡d@€m@il.com"
         }
-        response = self.client.post(reverse('profile'), data=post_data)
+        response = self.client.post(
+            reverse('profile'), secure=True, data=post_data
+        )
         self.assertContains(response, "Username:")
         self.assertContains(response, user.username.title())
         self.assertContains(response, "Email address:")
@@ -321,14 +332,17 @@ class ProfileViewTest(TestCase):
 
     def test_login_required(self):
         self.client.logout()
-        response = self.client.get(reverse('profile'))
-        self.assertRedirects(
-            response,
+        response = self.client.get(
+            reverse('profile'), follow=True, secure=True)
+        self.assertEqual(
+            response.redirect_chain[0][0],
             reverse('login') + "?next=" + reverse('profile')
         )
 
     def test_sensitive_post_parameters(self):
-        request = RequestFactory().post(reverse('profile'), data={})
+        request = RequestFactory().post(
+            reverse('profile'), secure=True, data={}
+        )
         ProfileView().dispatch(request)
         self.assertEqual(
             request.sensitive_post_parameters,
@@ -337,7 +351,7 @@ class ProfileViewTest(TestCase):
 
     def test_cache_control(self):
         user = create_random_user()
-        request = RequestFactory().get(reverse('profile'))
+        request = RequestFactory().get(reverse('profile'), secure=True)
         request.user = user
         response = ProfileView().dispatch(request)
         self.assertTrue(response.has_header('cache-control'))
