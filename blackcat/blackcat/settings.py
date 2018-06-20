@@ -11,11 +11,6 @@ https://docs.djangoproject.com/en/2.0/ref/settings/
 """
 
 import os
-# try:
-#     from . import production_secrets
-#     from . import email_settings
-# except ImportError:
-#     raise Warning("No secret local settings files could be loaded.")
 
 # Build paths inside the project like this: os.path.join(BASE_DIR, ...)
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
@@ -25,20 +20,20 @@ BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 # See https://docs.djangoproject.com/en/2.0/howto/deployment/checklist/
 
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = 'ikg@ri+&yk-_3+611#3cr&lr)1(a5q7zv$^v8l2%4*)i$zrz#e'
+# SECRET_KEY = 'ikg@ri+&yk-_3+611#3cr&lr)1(a5q7zv$^v8l2%4*)i$zrz#e'
 
 ALLOWED_HOSTS = []
 
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = False
 
-if not DEBUG:
-    # try:
-    #     SECRET_KEY = production_secrets.secret_key
-    # except NameError:
-    #     raise Warning(
-    #         "Secret Key could not be imported from local secret settings files"
-    #     )
+if DEBUG:
+    from . import production_secrets
+    from . import email_settings
+    SECRET_KEY = production_secrets.secret_key
+
+else:
+    SECRET_KEY = os.environ["DJANGO_SECRET_KEY"]
     SECURE_CONTENT_TYPE_NOSNIFF = True
     SECURE_BROWSER_XSS_FILTER = True
     SECURE_SSL_REDIRECT = True
@@ -94,18 +89,20 @@ WSGI_APPLICATION = 'blackcat.wsgi.application'
 # Database
 # https://docs.djangoproject.com/en/2.0/ref/settings/#databases
 
-DATABASES = {
-    'default': {
-        'ENGINE': 'django.db.backends.postgresql_psycopg2',
-        'NAME': 'blackcatdb',
-        'USER': 'blackcat',
-        'PASSWORD': 'alleyway',
-        'HOST': 'localhost',
-        'PORT': '',
-    }
-}
+if DEGUB:
 
-if not DEBUG:
+    DATABASES = {
+        'default': {
+            'ENGINE': 'django.db.backends.postgresql_psycopg2',
+            'NAME': 'blackcatdb',
+            'USER': 'blackcat',
+            'PASSWORD': 'alleyway',
+            'HOST': 'localhost',
+            'PORT': '',
+        }
+    }
+
+else:
 
     DATABASES = {
         'default': {
@@ -173,11 +170,9 @@ SITE_DOMAIN = "."
 
 EMAIL_USE_TLS = True
 EMAIL_HOST = 'smtp.gmail.com'
-# try:
-#     EMAIL_HOST_USER = email_settings.email
-#     EMAIL_HOST_PASSWORD = email_settings.password
-# except NameError:
-#     raise Warning(
-#         "Email settings could not be imported from local secret settings files"
-#     )
+
+if DEBUG:
+    EMAIL_HOST_USER = email_settings.email
+    EMAIL_HOST_PASSWORD = email_settings.password
+
 EMAIL_PORT = 587
