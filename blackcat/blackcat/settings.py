@@ -109,7 +109,7 @@ if not DEBUG:
 
     DATABASES = {
         'default': {
-            'ENGINE': 'postgresql',
+            'ENGINE': 'django.db.backends.postgresql',
             'NAME': 'blackcatdb',
             'USER': 'blackcat',
             'PASSWORD': 'alleyway',
