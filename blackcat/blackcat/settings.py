@@ -22,6 +22,12 @@ BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 # SECURITY WARNING: keep the secret key used in production secret!
 # SECRET_KEY = 'ikg@ri+&yk-_3+611#3cr&lr)1(a5q7zv$^v8l2%4*)i$zrz#e'
 
+def generate_random_secret_key():
+    from django.utils.crypto import get_random_string
+    chars = 'abcdefghijklmnopqrstuvwxyz0123456789!@#$%^&*(-_=+)'
+    return get_random_string(50, chars)
+
+
 ALLOWED_HOSTS = []
 
 # SECURITY WARNING: don't run with debug turned on in production!
@@ -33,7 +39,7 @@ if DEBUG:
     SECRET_KEY = production_secrets.secret_key
 
 else:
-    SECRET_KEY = os.getenv("DJANGO_SECRET_KEY")
+    SECRET_KEY = generate_random_secret_key()
     SECURE_CONTENT_TYPE_NOSNIFF = True
     SECURE_BROWSER_XSS_FILTER = True
     SECURE_SSL_REDIRECT = True
