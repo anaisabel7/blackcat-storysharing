@@ -110,15 +110,10 @@ if DEBUG:
 
 else:
 
+    from . import database
+
     DATABASES = {
-        'default': {
-            'ENGINE': 'django.db.backends.postgresql',
-            'NAME': 'blackcatdb',
-            'USER': 'blackcat',
-            'PASSWORD': 'alleyway',
-            'HOST': 'localhost',
-            'PORT': '',
-        }
+        'default': database.config()
     }
 
 
