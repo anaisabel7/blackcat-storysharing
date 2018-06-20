@@ -33,7 +33,7 @@ if DEBUG:
     SECRET_KEY = production_secrets.secret_key
 
 else:
-    SECRET_KEY = os.environ["DJANGO_SECRET_KEY"]
+    SECRET_KEY = os.getenv("DJANGO_SECRET_KEY")
     SECURE_CONTENT_TYPE_NOSNIFF = True
     SECURE_BROWSER_XSS_FILTER = True
     SECURE_SSL_REDIRECT = True
