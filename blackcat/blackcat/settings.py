@@ -110,10 +110,10 @@ if DEBUG:
 
 else:
 
-    from . import database
+    from . import production_database
 
     DATABASES = {
-        'default': database.config()
+        'default': production_database.config()
     }
 
 
