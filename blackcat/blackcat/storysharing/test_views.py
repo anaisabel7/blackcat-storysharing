@@ -31,6 +31,7 @@ class IndexViewTest(TestCase):
             response, "Create a user / Log in to start"
         )
         self.assertContains(response, "playing!")
+        self.assertContains(response, reverse("profile"))
 
     def test_content_change_for_logged_in_user(self):
         user = create_random_user()
@@ -305,7 +306,9 @@ class DisplayStoryViewTest(TestCase):
         other_user.set_password('password')
         other_user.save()
 
-        story = Story.objects.create(title="Fun Story", available=True)
+        story = Story.objects.create(
+            title="Fun Story", public=True, available=True
+        )
         StoryWriter.objects.create(story=story, writer=user, active=True)
         StoryWriter.objects.create(story=story, writer=other_user, active=True)
 
@@ -326,6 +329,15 @@ class DisplayStoryViewTest(TestCase):
         )
         self.assertNotIn("<form", str(response.content))
         self.assertNotIn("Add New Snippet", str(response.content))
+
+        self.client.logout()
+        response = self.client.get(
+            reverse('display_story', kwargs={'id': story.id})
+        )
+        self.assertNotIn(
+            "Thank you for adding your snippet! Wait for one of the other",
+            str(response.content)
+        )
 
         self.client.login(username=other_user.username, password='password')
         response = self.client.get(

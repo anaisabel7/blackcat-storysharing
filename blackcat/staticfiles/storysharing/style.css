@@ -1,0 +1,245 @@
+body {
+    padding: 1px;
+    margin: 0;
+    height: 100%;
+    background: #00001a;
+    color: #ccccff;
+}
+
+.wrapper {
+    padding: 1px;
+    position: relative;
+    min-height: 100%;
+}
+
+/* Index */
+
+.welcome {
+    padding-top: 60px;
+    text-align: center;
+    font-family: Tahoma, Geneva, sans-serif;
+}
+
+.welcome .title {
+    background: #ccccff;
+    color: #00001a;
+    border: 4px double #00001a;
+    padding: 5px;
+    font-size: 30px;
+    font-weight: bold;
+    margin-bottom: 50px;
+}
+
+.welcome .title .blackcat {
+    text-shadow: 5px 1px 3px #1e1e41;
+    font-size: 35px;
+}
+
+.welcome .title .welcometo {
+    text-shadow: -15px 5px 0px #ffff66;
+}
+
+.welcome .title .storysharing {
+    text-shadow: 15px -5px 0px #ffff66;
+}
+
+.welcome .options {
+    color: #ffff66;
+    font-size: 20px;
+}
+
+.welcome .options a:link {
+    text-decoration: none;
+    color: #ccccff;
+}
+
+.welcome .options a:visited {
+    text-decoration: none;
+    color: #ccccff;
+}
+
+.welcome .options a:hover {
+    text-decoration: none;
+    color: #1e1e41;
+}
+
+.welcome .options .playing {
+    font-size: 22px;
+    text-shadow: 0px 0px 0px #ffff66;
+}
+
+/* Menu */
+
+.menu {
+    background: #1e1e41;
+    color: #00001a;
+    border-top: 4px double #00001a;
+    padding-bottom: 15px;
+    padding-top: 15px;
+    position: absolute;
+    left: 0px;
+    bottom: 0px;
+    width: 100%;
+    text-align: center;
+    font-weight: bold;
+}
+
+.menu span {
+    padding-left: 5px;
+    padding-right: 5px;
+}
+
+.menu a:link {
+    text-decoration: none;
+    color: #00001a;
+}
+
+.menu a:visited {
+    text-decoration: none;
+    color: #00001a;
+}
+
+.menu a:hover {
+    text-decoration: none;
+    color: #ccccff;
+}
+
+/* Story list */
+
+.main .listlinks {
+    font-size: 18px;
+}
+
+.main .listlinks a:link {
+    color: #ccccff;
+}
+
+.main .listlinks a:visited {
+    color: #ccccff;
+}
+
+.main .listlinks a:hover {
+    color: #a8a8d7;
+}
+
+/* Display Story */
+
+.main .snippet {
+    padding: 0 20px;
+    background: #ccccff;
+    border: 3px solid red;
+}
+
+.main .snippet .text {
+    font-weight: bold;
+    color: #00001a;
+}
+
+.main .snippet .author {
+    color: red;
+}
+
+.main .snippetform {
+    color: red;
+    margin-bottom: 50px;
+}
+
+.main .snippetform textarea {
+    width: 100%;
+    font-size: 18px;
+    font-family: inherit;
+    padding: 10px;
+    margin-bottom: 10px;
+}
+
+
+/* General */
+
+.main {
+    display: block;
+    margin-left: auto;
+    margin-right: auto;
+    max-width: 1200px;
+    padding-bottom: 80px;
+}
+
+.main .header {
+    padding-top: 30px;
+    font-size: 35px;
+}
+
+.main form {
+    margin-bottom: 30px;
+}
+
+.main .links {
+    font-size: 18px;
+}
+
+.main .links a:link {
+    text-decoration: none;
+    color: #ccccff;
+}
+
+.main .links a:visited {
+    text-decoration: none;
+    color: #ccccff;
+}
+
+.main .links a:hover {
+    text-decoration: none;
+    color: #1e1e41;
+}
+
+/* Forms */
+
+.main form .selector {
+    float: none;
+}
+
+.main form .selector h2 {
+    font-family: Georgia, serif;
+    color: #00001a;
+}
+
+.main form .selector .selector-available .selector-filter {
+    border-bottom: 3px solid #00001a;
+}
+
+.main form .selector .selector-available .filtered {
+    background: #e6e6ff;
+    border-color: #e6e6ff;
+    border-style: solid;
+}
+
+.main form .selector .selector-available .selector-chooseall {
+    margin-bottom: 30px;
+}
+
+.main form .selector select {
+    padding: 5px 10px;
+}
+
+.main form .selector select option {
+    padding-top: 3px;
+    font-size: 16px;
+    font-family: Georgia, serif;
+    font-weight: bold;
+    color: #00001a;
+}
+
+.main form .selector .selector-chosen h2 {
+    color: #ccccff;
+    background: #1e1e41;
+    padding: 1px;
+}
+
+.main form .form-story-public {
+    clear: left;
+}
+
+/* Extra */
+
+.main .bottom {
+    margin-bottom: 60px;
+}
