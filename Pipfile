@@ -9,6 +9,7 @@ name = "pypi"
 Django = "==2.0.3"
 gunicorn = "*"
 django-heroku = "*"
+raven = "*"
 
 [requires]
 python_version = "3.5"
