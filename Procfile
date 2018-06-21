@@ -1,1 +1,1 @@
-web: sh -c 'cd ./welove_cos && exec gunicorn welove_cos.wsgi --preload --workers 1'
+web: sh -c 'cd ./blackcat && exec gunicorn blackcat.wsgi --preload --workers 1'
