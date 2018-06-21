@@ -11,6 +11,7 @@ https://docs.djangoproject.com/en/2.0/ref/settings/
 """
 
 import os
+import django_heroku
 
 # Build paths inside the project like this: os.path.join(BASE_DIR, ...)
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
@@ -26,6 +27,16 @@ SECRET_KEY = 'ikg@ri+&yk-_3+611#3cr&lr)1(a5q7zv$^v8l2%4*)i$zrz#e'
 DEBUG = True
 
 ALLOWED_HOSTS = []
+
+if not DEBUG:
+    SECRET_KEY = os.environ['SECRET_KEY']
+    SECURE_CONTENT_TYPE_NOSNIFF = True
+    SECURE_BROWSER_XSS_FILTER = True
+    SECURE_SSL_REDIRECT = True
+    SESSION_COOKIE_SECURE = True
+    CSRF_COOKIE_SECURE = True
+    X_FRAME_OPTIONS = 'DENY'
+    ALLOWED_HOSTS = ['*']
 
 
 # Application definition
@@ -138,10 +149,16 @@ SITE_DOMAIN = "."
 
 # Email settings
 
-from . import email_settings
-
 EMAIL_USE_TLS = True
 EMAIL_HOST = 'smtp.gmail.com'
-EMAIL_HOST_USER = email_settings.email
-EMAIL_HOST_PASSWORD = email_settings.password
+
+if not DEBUG:
+    from . import email_settings
+    EMAIL_HOST_USER = email_settings.email
+    EMAIL_HOST_PASSWORD = email_settings.password
+else:
+    EMAIL_HOST_USER = os.environ['EMAIL_HOST_USER']
+    EMAIL_HOST_PASSWORD = os.environ['EMAIL_HOST_PASSWORD']
 EMAIL_PORT = 587
+
+django_heroku.settings(locals())
