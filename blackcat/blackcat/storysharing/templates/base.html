@@ -13,6 +13,7 @@
             <span><a href="{% url 'stories' %}">Public Stories</a></span>
             <span><a href="{% url 'personal' %}">Your Stories</a></span>
             {% if user.is_authenticated %}
+                <span><a href="{% url 'start_story' %}">Start Story</a></span>
                 <span><a href="{% url 'profile' %}">{{ user.username|title }}</a></span>
             {% else %}
                 <span><a href="{% url 'login' %}">Log In</a></span>

@@ -561,8 +561,8 @@ class BaseContentTest(TestCase):
             '<meta name="viewport" {}>'.format(
                 'content="width=device-width, initial-scale=1.0"'
             ),
-            '<link rel="stylesheet" type="text/css" {}>'.format(
-                'href="/static/storysharing/style.css"'
+            '<link rel="stylesheet" type="text/css" {}'.format(
+                'href="/static/storysharing/style'
             )
         ]
 
@@ -619,6 +619,7 @@ class BaseContentTest(TestCase):
             self.assertContains(response, reverse('stories'))
             self.assertContains(response, reverse('personal'))
             self.assertContains(response, reverse('profile'))
+            self.assertContains(response, reverse('start_story'))
             self.assertContains(response, "Home")
             self.assertContains(response, "Public Stories")
             self.assertContains(response, "Your Stories")
