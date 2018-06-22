@@ -31,6 +31,7 @@ class IndexViewTest(TestCase):
             response, "Create a user / Log in to start"
         )
         self.assertContains(response, "playing!")
+        self.assertContains(response, reverse("profile"))
 
     def test_content_change_for_logged_in_user(self):
         user = create_random_user()
@@ -74,6 +75,31 @@ class PublicStoriesViewTest(TestCase):
             public_story_response, story.writers.get_queryset()[0].username
         )
 
+    def test_public_stories_ordered_by_title(self):
+        story = Story.objects.create(title="Wonderful Story", public=True)
+        user = create_random_user()
+        StoryWriter.objects.create(story=story, writer=user)
+        other_story = Story.objects.create(title="Awesome Story", public=True)
+        other_user = User.objects.create(
+            username="otheruser", email="other@email.com"
+        )
+        StoryWriter.objects.create(story=other_story, writer=other_user)
+        third_story = Story.objects.create(title="Magic Story", public=True)
+        third_user = User.objects.create(
+            username="thirduser", email="third@email.com"
+        )
+        StoryWriter.objects.create(story=third_story, writer=third_user)
+        response = self.client.get(reverse('stories'))
+        self.assertContains(response, story.title.title())
+        self.assertContains(response, other_story.title.title())
+        self.assertContains(response, third_story.title.title())
+
+        story_ind = str(response.content).find(story.title.title())
+        other_story_ind = str(response.content).find(other_story.title.title())
+        third_story_ind = str(response.content).find(third_story.title.title())
+
+        self.assertTrue(other_story_ind < third_story_ind < story_ind)
+
 
 class PersonalStoriesViewTest(TestCase):
 
@@ -111,6 +137,28 @@ class PersonalStoriesViewTest(TestCase):
         self.assertContains(response, user.username)
         self.assertNotIn(other_user.username, str(response.content))
         self.assertNotIn(other_story.title, str(response.content))
+
+    def test_personal_stories_ordered_by_latest_created(self):
+        user = create_random_user()
+        self.client.login(username=user.username, password='password')
+
+        story = Story.objects.create(title="Wonderful Story")
+        StoryWriter.objects.create(story=story, writer=user)
+        other_story = Story.objects.create(title="Awesome Story")
+        StoryWriter.objects.create(story=other_story, writer=user)
+        third_story = Story.objects.create(title="Magic Story")
+        StoryWriter.objects.create(story=third_story, writer=user)
+
+        response = self.client.get(reverse('personal'))
+        self.assertContains(response, story.title.title())
+        self.assertContains(response, other_story.title.title())
+        self.assertContains(response, third_story.title.title())
+
+        story_ind = str(response.content).find(story.title.title())
+        other_story_ind = str(response.content).find(other_story.title.title())
+        third_story_ind = str(response.content).find(third_story.title.title())
+
+        self.assertTrue(third_story_ind < other_story_ind < story_ind)
 
     def display_as_many_StoryWriterActiveForms_as_stories(self):
         self.create_two_stories_first_active()
@@ -323,7 +371,9 @@ class DisplayStoryViewTest(TestCase):
         other_user.set_password('password')
         other_user.save()
 
-        story = Story.objects.create(title="Fun Story", available=True)
+        story = Story.objects.create(
+            title="Fun Story", public=True, available=True
+        )
         StoryWriter.objects.create(story=story, writer=user, active=True)
         StoryWriter.objects.create(story=story, writer=other_user, active=True)
 
@@ -345,6 +395,15 @@ class DisplayStoryViewTest(TestCase):
         )
         self.assertNotIn("<form", str(response.content))
         self.assertNotIn("Add New Snippet", str(response.content))
+
+        self.client.logout()
+        response = self.client.get(
+            reverse('display_story', kwargs={'id': story.id})
+        )
+        self.assertNotIn(
+            "Thank you for adding your snippet! Wait for one of the other",
+            str(response.content)
+        )
 
         self.client.login(username=other_user.username, password='password')
         response = self.client.get(
@@ -576,8 +635,8 @@ class BaseContentTest(TestCase):
             '<meta name="viewport" {}>'.format(
                 'content="width=device-width, initial-scale=1.0"'
             ),
-            '<link rel="stylesheet" type="text/css" {}>'.format(
-                'href="/static/storysharing/style.css"'
+            '<link rel="stylesheet" type="text/css" {}'.format(
+                'href="/static/storysharing/style'
             )
         ]
 
@@ -635,6 +694,7 @@ class BaseContentTest(TestCase):
             self.assertContains(response, reverse('stories'))
             self.assertContains(response, reverse('personal'))
             self.assertContains(response, reverse('profile'))
+            self.assertContains(response, reverse('start_story'))
             self.assertContains(response, "Home")
             self.assertContains(response, "Public Stories")
             self.assertContains(response, "Your Stories")

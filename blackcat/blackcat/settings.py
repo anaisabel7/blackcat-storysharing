@@ -11,6 +11,7 @@ https://docs.djangoproject.com/en/2.0/ref/settings/
 """
 
 import os
+import django_heroku
 
 # Build paths inside the project like this: os.path.join(BASE_DIR, ...)
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
@@ -27,19 +28,13 @@ def generate_random_secret_key():
     chars = 'abcdefghijklmnopqrstuvwxyz0123456789!@#$%^&*(-_=+)'
     return get_random_string(50, chars)
 
-
-ALLOWED_HOSTS = []
-
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = False
 
-if DEBUG:
-    from . import production_secrets
-    from . import email_settings
-    SECRET_KEY = production_secrets.secret_key
+ALLOWED_HOSTS = []
 
-else:
-    SECRET_KEY = generate_random_secret_key()
+if not DEBUG:
+    SECRET_KEY = os.environ['SECRET_KEY']
     SECURE_CONTENT_TYPE_NOSNIFF = True
     SECURE_BROWSER_XSS_FILTER = True
     SECURE_SSL_REDIRECT = True
@@ -58,7 +53,8 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
-    'blackcat.storysharing'
+    'blackcat.storysharing',
+    'raven.contrib.django.raven_compat'
 ]
 
 MIDDLEWARE = [
@@ -116,6 +112,18 @@ else:
         'default': production_database.config()
     }
 
+if not DEBUG:
+    DATABASES = {
+        'default': {
+            'ENGINE': 'django.db.backends.postgresql_psycopg2',
+            'NAME': 'blackcatdb',
+            'USER': 'blackcat',
+            'PASSWORD': os.environ['DATABASE_PASSWORD'],
+            'HOST': 'localhost',
+            'PORT': '',
+        }
+    }
+
 
 # Password validation
 # https://docs.djangoproject.com/en/2.0/ref/settings/#auth-password-validators
@@ -165,7 +173,7 @@ AUTH_USER_MODEL = 'storysharing.User'
 LOGIN_URL = 'login'
 LOGIN_REDIRECT_URL = 'index'
 
-SITE_DOMAIN = "."
+SITE_DOMAIN = "blackcatstorysharing.herokuapp.com"
 
 # Email settings
 
@@ -173,10 +181,12 @@ EMAIL_USE_TLS = True
 EMAIL_HOST = 'smtp.gmail.com'
 
 if DEBUG:
+    from . import email_settings
     EMAIL_HOST_USER = email_settings.email
     EMAIL_HOST_PASSWORD = email_settings.password
 else:
-    EMAIL_HOST_USER = 'dummy@email.com'
-    EMAIL_HOST_PASSWORD = 'password'
-
+    EMAIL_HOST_USER = os.environ['EMAIL_HOST_USER']
+    EMAIL_HOST_PASSWORD = os.environ['EMAIL_HOST_PASSWORD']
 EMAIL_PORT = 587
+
+django_heroku.settings(locals())

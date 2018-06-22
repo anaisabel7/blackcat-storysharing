@@ -1,0 +1,1 @@
+web: sh -c 'cd ./blackcat && exec gunicorn blackcat.wsgi --preload --workers 1'
