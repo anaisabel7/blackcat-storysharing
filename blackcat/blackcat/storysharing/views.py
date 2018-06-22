@@ -41,6 +41,14 @@ class PublicStoriesView(ListView):
     model = Story
     template_name = 'storysharing/public_stories.html'
 
+    def get(self, request, *args, **kwargs):
+        if 'writer' in request.GET:
+            writer = User.objects.filter(username=request.GET['writer'])[0]
+            self.object_list = self.get_queryset().filter(writers__in=[writer])
+            context = self.get_context_data()
+            return self.render_to_response(context)
+        return super().get(request, *args, **kwargs)
+
     def get_queryset(self):
         return Story.objects.filter(public=True).order_by('title')
 

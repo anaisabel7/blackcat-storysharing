@@ -6,7 +6,7 @@
     <p class="header">Stories</p>
     {% for story in object_list %}
         <p class="listlinks">
-            <a href="{% url 'display_story' story.id %}">{{ story.title }}</a> by {% for writer in story.writers.get_queryset %}{{ writer }}, {% endfor %}
+            <a href="{% url 'display_story' story.id %}">{{ story.title }}</a> by {% for writer in story.writers.get_queryset %}<a href="{% url 'stories' %}?writer={{ writer.username }}">{{ writer }}</a>, {% endfor %}
         </p>
     {% endfor %}
 </div>
