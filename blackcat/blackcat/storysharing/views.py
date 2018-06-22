@@ -42,7 +42,7 @@ class PublicStoriesView(ListView):
     template_name = 'storysharing/public_stories.html'
 
     def get_queryset(self):
-        return Story.objects.filter(public=True)
+        return Story.objects.filter(public=True).order_by('title')
 
 
 class PersonalStoriesView(ListView, EmailActiveWritersMixin):
@@ -91,7 +91,8 @@ class PersonalStoriesView(ListView, EmailActiveWritersMixin):
         return super().dispatch(*args, **kwargs)
 
     def get_queryset(self):
-        return StoryWriter.objects.filter(writer=self.request.user)
+        return StoryWriter.objects.filter(
+            writer=self.request.user).order_by('-pk')
 
 
 class StartStoryView(View):

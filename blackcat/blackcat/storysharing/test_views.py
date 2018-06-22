@@ -73,6 +73,31 @@ class PublicStoriesViewTest(TestCase):
             public_story_response, story.writers.get_queryset()[0].username
         )
 
+    def test_public_stories_ordered_by_title(self):
+        story = Story.objects.create(title="Wonderful Story", public=True)
+        user = create_random_user()
+        StoryWriter.objects.create(story=story, writer=user)
+        other_story = Story.objects.create(title="Awesome Story", public=True)
+        other_user = User.objects.create(
+            username="otheruser", email="other@email.com"
+        )
+        StoryWriter.objects.create(story=other_story, writer=other_user)
+        third_story = Story.objects.create(title="Magic Story", public=True)
+        third_user = User.objects.create(
+            username="thirduser", email="third@email.com"
+        )
+        StoryWriter.objects.create(story=third_story, writer=third_user)
+        response = self.client.get(reverse('stories'))
+        self.assertContains(response, story.title.title())
+        self.assertContains(response, other_story.title.title())
+        self.assertContains(response, third_story.title.title())
+
+        story_ind = str(response.content).find(story.title.title())
+        other_story_ind = str(response.content).find(other_story.title.title())
+        third_story_ind = str(response.content).find(third_story.title.title())
+
+        self.assertTrue(other_story_ind < third_story_ind < story_ind)
+
 
 class PersonalStoriesViewTest(TestCase):
 
@@ -108,6 +133,28 @@ class PersonalStoriesViewTest(TestCase):
         self.assertContains(response, user.username)
         self.assertNotIn(other_user.username, str(response.content))
         self.assertNotIn(other_story.title, str(response.content))
+
+    def test_personal_stories_ordered_by_latest_created(self):
+        user = create_random_user()
+        self.client.login(username=user.username, password='password')
+
+        story = Story.objects.create(title="Wonderful Story")
+        StoryWriter.objects.create(story=story, writer=user)
+        other_story = Story.objects.create(title="Awesome Story")
+        StoryWriter.objects.create(story=other_story, writer=user)
+        third_story = Story.objects.create(title="Magic Story")
+        StoryWriter.objects.create(story=third_story, writer=user)
+
+        response = self.client.get(reverse('personal'))
+        self.assertContains(response, story.title.title())
+        self.assertContains(response, other_story.title.title())
+        self.assertContains(response, third_story.title.title())
+
+        story_ind = str(response.content).find(story.title.title())
+        other_story_ind = str(response.content).find(other_story.title.title())
+        third_story_ind = str(response.content).find(third_story.title.title())
+
+        self.assertTrue(third_story_ind < other_story_ind < story_ind)
 
     def display_as_many_StoryWriterActiveForms_as_stories(self):
         self.create_two_stories_first_active()
