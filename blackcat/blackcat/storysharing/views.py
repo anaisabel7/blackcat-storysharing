@@ -46,7 +46,7 @@ class PublicStoriesView(ListView):
             writer = User.objects.filter(username=request.GET['writer'])[0]
             self.object_list = self.get_queryset().filter(writers__in=[writer])
             context = self.get_context_data()
-            context['writer'] = writer
+            context['filtered_writer'] = writer
             return self.render_to_response(context)
         return super().get(request, *args, **kwargs)
 
