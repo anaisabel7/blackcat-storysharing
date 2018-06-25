@@ -3,12 +3,15 @@
 {% block content %}
 
 <div class="main">
-    <p class="header">Stories</p>
+    <p class="header">Public stories{% if writer %} by {{ writer.username }}{% endif %}</p>
     {% for story in object_list %}
         <p class="listlinks">
             <a href="{% url 'display_story' story.id %}">{{ story.title }}</a> by {% for writer in story.writers.get_queryset %}<a href="{% url 'stories' %}?writer={{ writer.username }}">{{ writer }}</a>, {% endfor %}
         </p>
     {% endfor %}
+    {% if writer %}
+        <p class="links"><a href="{% url 'stories' %}"> > Go back to all public stories < </a></p>
+    {% endif %}
 </div>
 
 {% endblock %}
