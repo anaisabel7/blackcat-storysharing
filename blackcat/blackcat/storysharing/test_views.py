@@ -45,9 +45,27 @@ class IndexViewTest(TestCase):
 
 
 class PublicStoriesViewTest(TestCase):
+
+    def create_three_stories_with_different_users(self):
+        story = Story.objects.create(title="Wonderful Story", public=True)
+        user = create_random_user()
+        StoryWriter.objects.create(story=story, writer=user)
+        other_story = Story.objects.create(title="Awesome Story", public=True)
+        other_user = User.objects.create(
+            username="otheruser", email="other@email.com"
+        )
+        StoryWriter.objects.create(story=other_story, writer=other_user)
+        third_story = Story.objects.create(title="Magic Story", public=True)
+        third_user = User.objects.create(
+            username="thirduser", email="third@email.com"
+        )
+        StoryWriter.objects.create(story=third_story, writer=third_user)
+
+        return (story, other_story, third_story), (user, other_user, third_user)
+
     def test_content_without_public_stories(self):
         response = self.client.get(reverse('stories'), secure=True)
-        self.assertContains(response, "Stories")
+        self.assertContains(response, "Public Stories")
         story = Story.objects.create(title="Wonderful Story")
         user = create_random_user()
         StoryWriter.objects.create(story=story, writer=user)
@@ -69,36 +87,52 @@ class PublicStoriesViewTest(TestCase):
             str(response.content),
             str(public_story_response.content)
         )
-        self.assertContains(public_story_response, "Stories")
+        self.assertContains(public_story_response, "Public Stories")
         self.assertContains(public_story_response, story.title)
         self.assertContains(
             public_story_response, story.writers.get_queryset()[0].username
         )
 
     def test_public_stories_ordered_by_title(self):
-        story = Story.objects.create(title="Wonderful Story", public=True)
-        user = create_random_user()
-        StoryWriter.objects.create(story=story, writer=user)
-        other_story = Story.objects.create(title="Awesome Story", public=True)
-        other_user = User.objects.create(
-            username="otheruser", email="other@email.com"
-        )
-        StoryWriter.objects.create(story=other_story, writer=other_user)
-        third_story = Story.objects.create(title="Magic Story", public=True)
-        third_user = User.objects.create(
-            username="thirduser", email="third@email.com"
-        )
-        StoryWriter.objects.create(story=third_story, writer=third_user)
+        # Titles for stories start with 'W' [0], 'A'[1], 'M'[2]
+        stories, users = self.create_three_stories_with_different_users()
         response = self.client.get(reverse('stories'))
-        self.assertContains(response, story.title.title())
-        self.assertContains(response, other_story.title.title())
-        self.assertContains(response, third_story.title.title())
+        self.assertContains(response, stories[0].title.title())
+        self.assertContains(response, stories[1].title.title())
+        self.assertContains(response, stories[2].title.title())
 
-        story_ind = str(response.content).find(story.title.title())
-        other_story_ind = str(response.content).find(other_story.title.title())
-        third_story_ind = str(response.content).find(third_story.title.title())
+        w_story_ind = str(response.content).find(stories[0].title.title())
+        a_story_ind = str(response.content).find(stories[1].title.title())
+        m_story_ind = str(response.content).find(stories[2].title.title())
 
-        self.assertTrue(other_story_ind < third_story_ind < story_ind)
+        self.assertTrue(a_story_ind < m_story_ind < w_story_ind)
+
+    def test_filtering_public_stories_by_writer(self):
+        stories, users = self.create_three_stories_with_different_users()
+        response = self.client.get(reverse('stories'))
+        for user in users:
+            self.assertContains(response, user.username)
+            self.assertContains(
+                response,
+                "{}?writer={}".format(reverse('stories'), user.username)
+            )
+        self.assertNotIn("Public stories by", str(response.content))
+        self.assertNotIn(
+            "Go back to all public stories", str(response.content)
+        )
+
+        response = self.client.get(
+            reverse('stories') + "?writer=" + users[1].username
+        )
+
+        self.assertContains(
+            response, "Public Stories by {}".format(users[1].username)
+        )
+        self.assertContains(response, "Go back to all public stories")
+        self.assertContains(response, stories[1].title.title())
+        self.assertContains(response, users[1].username)
+        self.assertNotIn(users[2].username, str(response.content))
+        self.assertNotIn(stories[0].title.title(), str(response.content))
 
 
 class PersonalStoriesViewTest(TestCase):
