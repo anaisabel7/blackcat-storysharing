@@ -49,3 +49,30 @@ class CreateSnippetForm(ModelForm):
             "story": HiddenInput(),
             "author": HiddenInput()
         }
+
+
+class ShareableStoryForm(ModelForm):
+
+    class Meta:
+        model = Story
+        fields = ["shareable", "public"]
+        widgets = {
+            "shareable": CheckboxInput(
+                attrs={'onclick': 'this.form.submit();'},
+            ),
+            "public": CheckboxInput(
+                attrs={'onclick': 'this.form.submit();'}
+            )
+        }
+        labels = {
+            "shareable": "Set as shareable",
+            "public": "Set as public"
+        }
+        help_texts = {
+            "shareable": "Everyone who knows (or guesses) the url {}".format(
+                "of a shareable story will be able to see its printable page."
+            ),
+            "public": "A public story will be displayed in our list {}".format(
+                "for everyone to read, including the author of each snippet."
+            )
+        }

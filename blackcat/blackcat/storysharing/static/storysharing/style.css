@@ -237,3 +237,15 @@ body {
 .main form .form-story-public {
     clear: left;
 }
+
+/* Extra */
+
+.main .rightside {
+    border-top: double 3px #1e1e41;
+    text-align: right;
+    font-size: 22px;
+}
+
+.main .tiny {
+    font-size: 70%;
+}

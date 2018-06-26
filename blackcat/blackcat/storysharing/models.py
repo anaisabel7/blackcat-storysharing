@@ -11,6 +11,7 @@ class Story(models.Model):
     public = models.BooleanField(default=False)
     available = models.BooleanField(default=False)
     writers = models.ManyToManyField(User, through='StoryWriter')
+    shareable = models.BooleanField(default=False)
 
 
 class Snippet(models.Model):
