@@ -32,7 +32,7 @@ urlpatterns = [
         name='display_story'
     ),
     path(
-        'printable_story/<slug:pk>/',
+        'printable_story/<slug:pk>/<title>',
         views.PrintableStoryView.as_view(),
         name='printable_story'
     )

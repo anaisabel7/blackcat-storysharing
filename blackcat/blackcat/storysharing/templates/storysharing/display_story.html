@@ -47,7 +47,7 @@
                 <p class="bottom links">Thank you for adding your snippet! Wait for one of the other writers to add theirs...</p>
             {% endif %}
             {% if story.shareable or editable %}
-                <p class="links rightside"><a href="{% url 'printable_story' pk=story.pk %}">See printable version & story settings</a></p>
+                <p class="links rightside"><a href="{% url 'printable_story' pk=story.pk title=story.title|slugify %}">See printable version & story settings</a></p>
             {% endif %}
         {% endif %}
     </div>

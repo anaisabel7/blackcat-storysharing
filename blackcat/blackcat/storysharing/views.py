@@ -6,6 +6,7 @@ from django.shortcuts import render
 from django.template import loader
 from django.urls import reverse
 from django.utils.decorators import method_decorator
+from django.utils.text import slugify
 from django.views.generic import ListView, View, DetailView
 from .models import Story, StoryWriter, Snippet, User
 from .forms import (
@@ -46,7 +47,10 @@ class PrintableStoryView(DetailView):
     form_name = ShareableStoryForm
 
     def get(self, request, *args, **kwargs):
+        print(request.resolver_match)
         self.object = self.get_object()
+        if slugify(self.object.title) != kwargs['title']:
+            return HttpResponseRedirect(reverse('index'))
         context = self.get_context_data(object=self.object)
         context['form'] = self.form_name(
             initial={
@@ -63,10 +67,15 @@ class PrintableStoryView(DetailView):
         context['is_writer'] = request.user.username in [
             x['username'] for x in self.object.writers.values()]
 
+        if (
+            slugify(self.object.title) != kwargs['title']
+        ) or (
+            not context['is_writer']
+        ):
+            return HttpResponseRedirect(reverse('index'))
+
         form = self.form_name(request.POST)
         if form.is_valid():
-            if not context['is_writer']:
-                return HttpResponseRedirect(reverse('index'))
             self.object.shareable = form.cleaned_data['shareable']
             self.object.public = form.cleaned_data['public']
             self.object.save()
