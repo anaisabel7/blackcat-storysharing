@@ -11,7 +11,7 @@ from django.views.generic import ListView, View, DetailView
 from .models import Story, StoryWriter, Snippet, User
 from .forms import (
     StartStoryForm, StoryWriterActiveForm, CreateSnippetForm,
-    ShareableStoryForm
+    StorySettingsForm
 )
 
 
@@ -44,10 +44,9 @@ class EmailActiveWritersMixin(object):
 class PrintableStoryView(DetailView):
     template_name = 'storysharing/printable_story.html'
     model = Story
-    form_name = ShareableStoryForm
+    form_name = StorySettingsForm
 
     def get(self, request, *args, **kwargs):
-        print(request.resolver_match)
         self.object = self.get_object()
         if slugify(self.object.title) != kwargs['title']:
             return HttpResponseRedirect(reverse('index'))

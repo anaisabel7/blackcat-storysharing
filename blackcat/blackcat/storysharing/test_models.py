@@ -10,7 +10,8 @@ class StoryTest(TestCase):
             'title': models.CharField,
             'writers': models.ManyToManyField,
             'public': models.BooleanField,
-            'available': models.BooleanField
+            'available': models.BooleanField,
+            'shareable': models.BooleanField
         }
 
         for field in expected_fields:
@@ -28,6 +29,8 @@ class StoryTest(TestCase):
         self.assertTrue(hasattr(Story, 'storywriter_set'))
 
         self.assertEqual(Story._meta.get_field('public').default, False)
+
+        self.assertEqual(Story._meta.get_field('shareable').default, False)
 
 
 class SnippetTest(TestCase):

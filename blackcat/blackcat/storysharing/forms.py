@@ -51,11 +51,11 @@ class CreateSnippetForm(ModelForm):
         }
 
 
-class ShareableStoryForm(ModelForm):
+class StorySettingsForm(ModelForm):
 
     class Meta:
         model = Story
-        fields = ["shareable", "public"]
+        fields = ("shareable", "public")
         widgets = {
             "shareable": CheckboxInput(
                 attrs={'onclick': 'this.form.submit();'},

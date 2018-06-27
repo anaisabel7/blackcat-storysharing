@@ -14,6 +14,9 @@
             {% endfor %}
             {% if is_writer %}
                 <div class="rightside">
+                    {% if errors %}
+                        <p>The changes to the story settings could not be applied. An error occurred</p>
+                    {% endif %}
                     <form method="post">
                         {% csrf_token %}
                         <p>{{ form.shareable.errors }}</p>
