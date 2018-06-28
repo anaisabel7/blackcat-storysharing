@@ -184,6 +184,31 @@ class PrintableStoryViewTest(TestCase):
             str(response.content)
         )
 
+    @patch.object(
+        views.EmailActiveWritersMixin, 'send_email_to_active_writers'
+    )
+    def test_email_sent_on_valid_post_form(
+        self, mock_send_email_to_active_writers
+    ):
+        user = create_random_user()
+        self.client.login(username=user.username, password="password")
+        story = Story.objects.create(title="The running robot")
+        StoryWriter.objects.create(story=story, writer=user)
+        post_data = {
+            "shareable": True,
+            "public": False
+        }
+        response = self.client.post(reverse('printable_story', kwargs={
+            "pk": story.pk,
+            "title": slugify(story.title)
+        }), data=post_data)
+
+        mock_send_email_to_active_writers.assert_called_with(
+            story,
+            "The story has been set as not public and shareable {}".format(
+                "by writer {}.".format(user.username))
+        )
+
 
 class PublicStoriesViewTest(TestCase):
 

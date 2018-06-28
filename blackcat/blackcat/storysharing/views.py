@@ -41,7 +41,7 @@ class EmailActiveWritersMixin(object):
             )
 
 
-class PrintableStoryView(DetailView):
+class PrintableStoryView(DetailView, EmailActiveWritersMixin):
     template_name = 'storysharing/printable_story.html'
     model = Story
     form_name = StorySettingsForm
@@ -78,6 +78,14 @@ class PrintableStoryView(DetailView):
             self.object.shareable = form.cleaned_data['shareable']
             self.object.public = form.cleaned_data['public']
             self.object.save()
+
+            self.send_email_to_active_writers(
+                self.object,
+                "The story has been set as {}public and {}shareable ".format(
+                    "" if self.object.public else "not ",
+                    "" if self.object.shareable else "not "
+                ) + "by writer {}.".format(request.user.username)
+            )
         else:
             context['errors'] = True
 
