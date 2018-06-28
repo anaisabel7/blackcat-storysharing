@@ -76,3 +76,10 @@ class StorySettingsForm(ModelForm):
                 "for everyone to read, including the author of each snippet."
             )
         }
+
+
+class SnippetEditForm(ModelForm):
+
+    class Meta:
+        model = Snippet
+        fields = ("text",)

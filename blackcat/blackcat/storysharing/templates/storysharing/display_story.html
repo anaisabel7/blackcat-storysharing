@@ -19,7 +19,12 @@
             {% for snippet in snippets %}
                 <div class="snippet">
                     <p class="text">{{ snippet.text }}</p>
-                    <p class="author">- by {{ snippet.author }}</p>
+                    <p class="author">
+                        - by {{ snippet.author }}
+                        {% if snippet.author == user %}
+                            <a href="{% url 'snippet_edit' pk=snippet.pk %}"> <i class="fas fa-pen"></i></a>
+                        {% endif %}
+                    </p>
                 </div>
             {% endfor %}
             {% if not snippets %}

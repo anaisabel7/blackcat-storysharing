@@ -1,0 +1,17 @@
+{% extends 'base.html' %}
+
+{% block content %}
+    <div class="main">
+        <p class="header">Snippet Edit</p>
+        <p class="links">An edited snippet will always have the associated "edited" tag (which will appear in the displayed story).</p>
+        <form method=post>
+            {% csrf_token %}
+            <div class="snippetform">
+                <p>{{ form.text.errors }}</p>
+                <p>{{ form.text }}</p>
+                <input type="submit" value="Apply Changes">
+            </div>
+        </form>
+        <p class="links"><a href="{% url 'display_story' id=object.story.id %}"> > Cancel edit and go back to story. < </a></p>
+    </div>
+{% endblock %}

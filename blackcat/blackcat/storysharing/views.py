@@ -11,7 +11,7 @@ from django.views.generic import ListView, View, DetailView
 from .models import Story, StoryWriter, Snippet, User
 from .forms import (
     StartStoryForm, StoryWriterActiveForm, CreateSnippetForm,
-    StorySettingsForm
+    StorySettingsForm, SnippetEditForm
 )
 
 
@@ -243,7 +243,7 @@ class DisplayStoryView(View, EmailActiveWritersMixin):
         if not (story.public or request.user in writers_queryset):
             return render(request, self.template_name, {'doesnt_exist': True})
 
-        snippets = Snippet.objects.filter(story=story)
+        snippets = Snippet.objects.filter(story=story).order_by('pk')
         self.context['snippets'] = snippets
 
         if request.user in writers_queryset:
@@ -298,3 +298,44 @@ class DisplayStoryView(View, EmailActiveWritersMixin):
         self.context.update(post_context)
 
         return render(request, self.template_name, self.context)
+
+
+class SnippetEditView(DetailView, EmailActiveWritersMixin):
+    template_name = "storysharing/snippet_edit.html"
+    model = Snippet
+    form_name = SnippetEditForm
+
+    def get(self, request, *args, **kwargs):
+        self.object = self.get_object()
+        if request.user != self.object.author:
+            return HttpResponseRedirect(reverse('index'))
+        context = self.get_context_data(object=self.object)
+        context['form'] = self.form_name(initial={'text': self.object.text})
+        return self.render_to_response(context)
+
+    def post(self, request, *args, **kwargs):
+        self.object = self.get_object()
+        if request.user != self.object.author:
+            return HttpResponseRedirect(reverse('index'))
+        form = self.form_name(request.POST)
+        if form.is_valid():
+            self.object.edited = True
+            self.object.text = form.cleaned_data['text']
+            self.object.save()
+
+            self.send_email_to_active_writers(
+                self.object.story,
+                "{} edited one of their snippets in your shared story.".format(
+                    request.user
+                ) + "\nThe new text of the snippet is: \"{}".format(
+                    self.object.text
+                )
+            )
+            return HttpResponseRedirect(reverse('display_story', kwargs={
+                'id': self.object.story.id
+            }))
+
+        context = self.get_context_data(object=self.object)
+        context['errors'] = True
+        context['form'] = form
+        return self.render_to_response(context)

@@ -19,6 +19,7 @@ class Snippet(models.Model):
     author = models.ForeignKey(
         User, on_delete=models.SET_NULL, null=True, blank=False)
     text = models.TextField(max_length=1000)
+    edited = models.BooleanField(default=False)
 
 
 class StoryWriter(models.Model):

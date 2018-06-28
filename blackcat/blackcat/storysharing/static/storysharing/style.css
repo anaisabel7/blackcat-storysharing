@@ -139,6 +139,18 @@ body {
     color: red;
 }
 
+.main .snippet .author a:link {
+    color: red;
+}
+
+.main .snippet .author a:visited {
+    color: red;
+}
+
+.main .snippet .author a:hover {
+    color: red;
+}
+
 .main .snippetform {
     color: red;
     margin-bottom: 60px;
