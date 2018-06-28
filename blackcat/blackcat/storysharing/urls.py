@@ -31,6 +31,11 @@ urlpatterns = [
         views.DisplayStoryView.as_view(),
         name='display_story'
     ),
+    path(
+        'printable_story/<slug:pk>/<title>',
+        views.PrintableStoryView.as_view(),
+        name='printable_story'
+    )
 ]
 
 # Auth
