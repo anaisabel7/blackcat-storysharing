@@ -3,12 +3,12 @@
 {% block content %}
 
 <div class="main">
-    <p class="header">Stories</p>
+    <p class="header">Personal Stories</p>
     <p class="links">
         Active stories are those in which you can write snippets (and receive email updates).
     </p>
     {% for storywriter in object_list %}
-        <p class="listlinks"><a href="{% url 'display_story' storywriter.story.id %}">{{ storywriter.story.title }}</a> by {% for writer in storywriter.story.writers.get_queryset %}{{ writer }}, {% endfor %}</p>
+        <p class="listlinks"><a href="{% url 'display_story' storywriter.story.id %}">{{ storywriter.story.title }}</a> by {% for writer in storywriter.story.writers.get_queryset %}{{ writer }}{{ forloop.last|yesno:",&#44;"|safe }} {% endfor %}</p>
         <p class="listlinks">
             <form method="post" action="personal">
                 {% csrf_token %}
