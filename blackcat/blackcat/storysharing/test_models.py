@@ -39,7 +39,8 @@ class SnippetTest(TestCase):
         expected_fields = {
             'story': models.ForeignKey,
             'author': models.ForeignKey,
-            'text': models.TextField
+            'text': models.TextField,
+            'edited': models.BooleanField
         }
 
         for field in expected_fields:
@@ -71,6 +72,8 @@ class SnippetTest(TestCase):
         )
 
         self.assertEqual(Snippet._meta.get_field('text').max_length, 1000)
+
+        self.assertEqual(Snippet._meta.get_field('edited').default, False)
 
 
 class StoryWriterTest(TestCase):

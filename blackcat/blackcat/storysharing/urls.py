@@ -35,6 +35,11 @@ urlpatterns = [
         'printable_story/<slug:pk>/<title>',
         views.PrintableStoryView.as_view(),
         name='printable_story'
+    ),
+    path(
+        'snippet_edit/<slug:pk>/',
+        views.SnippetEditView.as_view(),
+        name='snippet_edit'
     )
 ]
 
