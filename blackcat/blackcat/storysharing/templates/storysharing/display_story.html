@@ -18,7 +18,12 @@
             {% endif %}
             {% for snippet in snippets %}
                 <div class="snippet">
-                    <p class="text">{{ snippet.text }}</p>
+                    <p class="text">
+                        {{ snippet.text }}
+                        {% if snippet.edited %}
+                            <i class="fas fa-feather-alt"></i>
+                        {% endif %}
+                    </p>
                     <p class="author">
                         - by {{ snippet.author }}
                         {% if snippet.author == user %}
@@ -29,6 +34,8 @@
             {% endfor %}
             {% if not snippets %}
                 <p class="links">This story is still empty!</p>
+            {% else %}
+                <p class="links tiny">Any snippets with the "<i class="fas fa-feather-alt"></i>" simbol have been edited.</p>
             {% endif %}
             {% if form and storywriter.active and story.available %}
                 <form method="post">

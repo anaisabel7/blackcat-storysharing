@@ -1,6 +1,6 @@
 from .forms import (
     StartStoryForm, StoryWriterActiveForm, CreateSnippetForm,
-    StorySettingsForm
+    StorySettingsForm, SnippetEditForm
 )
 from .models import Story, StoryWriter, Snippet
 from django.contrib.admin.widgets import FilteredSelectMultiple
@@ -150,3 +150,15 @@ class StorySettingsFormTest(TestCase):
                 expected_help_texts[help_text],
                 StorySettingsForm._meta.help_texts[help_text]
             )
+
+
+class SnippetEditFormTest(TestCase):
+
+    def test_meta_content(self):
+
+        self.assertEqual(SnippetEditForm._meta.model, Snippet)
+
+        self.assertEqual(
+            SnippetEditForm._meta.fields,
+            ("text",)
+        )
