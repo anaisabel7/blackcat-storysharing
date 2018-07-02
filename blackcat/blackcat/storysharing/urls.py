@@ -40,6 +40,11 @@ urlpatterns = [
         'snippet_edit/<slug:pk>/',
         views.SnippetEditView.as_view(),
         name='snippet_edit'
+    ),
+    path(
+        'delete_story/<slug:pk>/',
+        views.DeleteStory.as_view(),
+        name='delete_story'
     )
 ]
 

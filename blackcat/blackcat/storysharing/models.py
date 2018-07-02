@@ -12,6 +12,7 @@ class Story(models.Model):
     available = models.BooleanField(default=False)
     writers = models.ManyToManyField(User, through='StoryWriter')
     shareable = models.BooleanField(default=False)
+    to_be_deleted = models.BooleanField(defailt=False)
 
 
 class Snippet(models.Model):
@@ -26,3 +27,4 @@ class StoryWriter(models.Model):
     story = models.ForeignKey(Story, on_delete=models.CASCADE)
     writer = models.ForeignKey(User, on_delete=models.CASCADE)
     active = models.BooleanField(default=False)
+    delete = models.BooleanField(default=False)

@@ -11,17 +11,47 @@ from django.views.generic import ListView, View, DetailView
 from .models import Story, StoryWriter, Snippet, User
 from .forms import (
     StartStoryForm, StoryWriterActiveForm, CreateSnippetForm,
-    StorySettingsForm, SnippetEditForm
+    StorySettingsForm, SnippetEditForm, StoryWriterDeleteForm
 )
 
 
 class EmailActiveWritersMixin(object):
+
+    def send_delete_story_email(self, story):
+        for storywriter in StoryWriter.objects.filter(
+                story=story).filter(active=True):
+            delete_story_link = SITE_DOMAIN + reverse(
+                'delete_story', kwargs={'pk': storywriter.pk})
+            body = "We've got an update regarding your story \"{}\":".format(
+                story.title.title()
+            ) + "\nThis story has been marked as ready to be {}".format(
+                "deleted. To give your approval and delete the story"
+            ) + " visit {}.\n".format(
+                delete_story_link
+            ) + "You can manage the story settings here: {}\n".format(
+                SITE_DOMAIN + reverse('printable_story', kwargs={
+                    'pk': story.pk,
+                    'title': slugify(story.title)
+                })
+            ) + "Kindly, the {} team.".format(SITE_DOMAIN)
+
+            send_mail(
+                "Black Cat Story Sharing - Update",
+                body,
+                EMAIL_HOST_USER,
+                [storywriter.writer.email]
+            )
 
     def send_email_to_active_writers(self, story, update):
         body = "We've got an update regarding your story \"{}\":\n{}\n".format(
             story.title.title(), update
         ) + "You can visit your story here: {}\n".format(
             SITE_DOMAIN + reverse('display_story', kwargs={'id': story.id})
+        ) + "Or manage the story settings here: {}\n".format(
+            SITE_DOMAIN + reverse('printable_story', kwargs={
+                'pk': story.pk,
+                'title': slugify(story.title)
+            })
         ) + "If you don't want to receive updates about this story, {}".format(
             "set it as inactive in your personal stories here: {}\n".format(
                 SITE_DOMAIN + reverse('personal')
@@ -39,6 +69,23 @@ class EmailActiveWritersMixin(object):
                 EMAIL_HOST_USER,
                 [email]
             )
+
+
+class DeleteStoryView(DetailView):
+    template_name = 'storysharing/delete_story.html'
+    model = StoryWriter
+    form_name = StoryWriterDeleteForm
+
+    def get(self, request, *args, **kwargs):
+        self.object = self.get_object()
+        if (request.user != self.object.user) or (
+            not self.object.story.to_be_deleted
+        ):
+            HttpResponseRedirect(reverse('index'))
+        context = self.get_context_data(object=self.object)
+        form = self.form_name()
+        context['form'] = form
+        return self.render_to_response(context)
 
 
 class PrintableStoryView(DetailView, EmailActiveWritersMixin):
@@ -77,15 +124,19 @@ class PrintableStoryView(DetailView, EmailActiveWritersMixin):
         if form.is_valid():
             self.object.shareable = form.cleaned_data['shareable']
             self.object.public = form.cleaned_data['public']
+            self.object.to_be_deleted = form.cleaned_data['to_be_deleted']
             self.object.save()
 
-            self.send_email_to_active_writers(
-                self.object,
-                "The story has been set as {}public and {}shareable ".format(
-                    "" if self.object.public else "not ",
-                    "" if self.object.shareable else "not "
-                ) + "by writer {}.".format(request.user.username)
-            )
+            if not self.object.to_be_deleted:
+                self.send_email_to_active_writers(
+                    self.object,
+                    "The story has been set as {}public and {}shareable ".format(
+                        "" if self.object.public else "not ",
+                        "" if self.object.shareable else "not "
+                    ) + "by writer {}.".format(request.user.username)
+                )
+            else:
+                self.send_delete_story_email(self.object)
         else:
             context['errors'] = True
 
