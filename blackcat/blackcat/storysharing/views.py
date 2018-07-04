@@ -6,9 +6,13 @@ from django.shortcuts import render
 from django.template import loader
 from django.urls import reverse
 from django.utils.decorators import method_decorator
-from django.views.generic import ListView, View
+from django.utils.text import slugify
+from django.views.generic import ListView, View, DetailView
 from .models import Story, StoryWriter, Snippet, User
-from .forms import StartStoryForm, StoryWriterActiveForm, CreateSnippetForm
+from .forms import (
+    StartStoryForm, StoryWriterActiveForm, CreateSnippetForm,
+    StorySettingsForm, SnippetEditForm
+)
 
 
 class EmailActiveWritersMixin(object):
@@ -37,9 +41,73 @@ class EmailActiveWritersMixin(object):
             )
 
 
+class PrintableStoryView(DetailView, EmailActiveWritersMixin):
+    template_name = 'storysharing/printable_story.html'
+    model = Story
+    form_name = StorySettingsForm
+
+    def get(self, request, *args, **kwargs):
+        self.object = self.get_object()
+        if slugify(self.object.title) != kwargs['title']:
+            return HttpResponseRedirect(reverse('index'))
+        context = self.get_context_data(object=self.object)
+        context['form'] = self.form_name(
+            initial={
+                "shareable": self.object.shareable,
+                "public": self.object.public
+            })
+        context['is_writer'] = request.user.username in [
+            x['username'] for x in self.object.writers.values()]
+        return self.render_to_response(context)
+
+    def post(self, request, *args, **kwargs):
+        self.object = self.get_object()
+        context = self.get_context_data(object=self.object)
+        context['is_writer'] = request.user in self.object.writers.all()
+
+        if (
+            slugify(self.object.title) != kwargs['title']
+        ) or (
+            not context['is_writer']
+        ):
+            return HttpResponseRedirect(reverse('index'))
+
+        form = self.form_name(request.POST)
+        if form.is_valid():
+            self.object.shareable = form.cleaned_data['shareable']
+            self.object.public = form.cleaned_data['public']
+            self.object.save()
+
+            self.send_email_to_active_writers(
+                self.object,
+                "The story has been set as {}public and {}shareable ".format(
+                    "" if self.object.public else "not ",
+                    "" if self.object.shareable else "not "
+                ) + "by writer {}.".format(request.user.username)
+            )
+        else:
+            context['errors'] = True
+
+        context['form'] = self.form_name(
+            initial={
+                "shareable": self.object.shareable,
+                "public": self.object.public
+            })
+        return self.render_to_response(context)
+
+
 class PublicStoriesView(ListView):
     model = Story
     template_name = 'storysharing/public_stories.html'
+
+    def get(self, request, *args, **kwargs):
+        if 'writer' in request.GET:
+            writer = User.objects.filter(username=request.GET['writer'])[0]
+            self.object_list = self.get_queryset().filter(writers__in=[writer])
+            context = self.get_context_data()
+            context['filtered_writer'] = writer
+            return self.render_to_response(context)
+        return super().get(request, *args, **kwargs)
 
     def get_queryset(self):
         return Story.objects.filter(public=True).order_by('title')
@@ -174,7 +242,7 @@ class DisplayStoryView(View, EmailActiveWritersMixin):
         if not (story.public or request.user in writers_queryset):
             return render(request, self.template_name, {'doesnt_exist': True})
 
-        snippets = Snippet.objects.filter(story=story)
+        snippets = Snippet.objects.filter(story=story).order_by('pk')
         self.context['snippets'] = snippets
 
         if request.user in writers_queryset:
@@ -229,3 +297,44 @@ class DisplayStoryView(View, EmailActiveWritersMixin):
         self.context.update(post_context)
 
         return render(request, self.template_name, self.context)
+
+
+class SnippetEditView(DetailView, EmailActiveWritersMixin):
+    template_name = "storysharing/snippet_edit.html"
+    model = Snippet
+    form_name = SnippetEditForm
+
+    def get(self, request, *args, **kwargs):
+        self.object = self.get_object()
+        if request.user != self.object.author:
+            return HttpResponseRedirect(reverse('index'))
+        context = self.get_context_data(object=self.object)
+        context['form'] = self.form_name(initial={'text': self.object.text})
+        return self.render_to_response(context)
+
+    def post(self, request, *args, **kwargs):
+        self.object = self.get_object()
+        if request.user != self.object.author:
+            return HttpResponseRedirect(reverse('index'))
+        form = self.form_name(request.POST)
+        if form.is_valid():
+            self.object.edited = True
+            self.object.text = form.cleaned_data['text']
+            self.object.save()
+
+            self.send_email_to_active_writers(
+                self.object.story,
+                "{} edited one of their snippets in your shared story.".format(
+                    request.user
+                ) + "\nThe new text of the snippet is: \"{}\"".format(
+                    self.object.text
+                )
+            )
+            return HttpResponseRedirect(reverse('display_story', kwargs={
+                'id': self.object.story.id
+            }))
+
+        context = self.get_context_data(object=self.object)
+        context['errors'] = True
+        context['form'] = form
+        return self.render_to_response(context)

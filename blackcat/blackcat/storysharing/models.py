@@ -11,6 +11,7 @@ class Story(models.Model):
     public = models.BooleanField(default=False)
     available = models.BooleanField(default=False)
     writers = models.ManyToManyField(User, through='StoryWriter')
+    shareable = models.BooleanField(default=False)
 
 
 class Snippet(models.Model):
@@ -18,6 +19,7 @@ class Snippet(models.Model):
     author = models.ForeignKey(
         User, on_delete=models.SET_NULL, null=True, blank=False)
     text = models.TextField(max_length=1000)
+    edited = models.BooleanField(default=False)
 
 
 class StoryWriter(models.Model):

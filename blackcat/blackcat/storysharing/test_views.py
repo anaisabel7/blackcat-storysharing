@@ -1,7 +1,8 @@
 from blackcat.settings import SITE_DOMAIN, EMAIL_HOST_USER
 from django.contrib.auth import login
 from django.urls import reverse
-from django.test import TestCase
+from django.utils.text import slugify
+from django.test import TestCase, RequestFactory
 from unittest.mock import patch, call
 from .models import User, Story, StoryWriter, Snippet
 from .urls import urlpatterns
@@ -44,10 +45,193 @@ class IndexViewTest(TestCase):
         self.assertContains(response, "playing!")
 
 
+class PrintableStoryViewTest(TestCase):
+
+    def test_requires_shareable_story_or_writer_logged_in(self):
+        user = create_random_user()
+        story = Story.objects.create(title="A fairytale")
+        StoryWriter.objects.create(story=story, writer=user)
+        response = self.client.get(reverse(
+            'printable_story',
+            kwargs={"pk": story.pk, "title": slugify(story.title)}
+        ))
+        self.assertContains(response, "Nothing to see here...")
+        self.assertContains(
+            response,
+            "you might need to login or tell your friend to set their story as"
+        )
+        self.assertNotIn(story.title, str(response.content))
+
+        self.client.login(username=user.username, password="password")
+        response = self.client.get(reverse(
+            'printable_story',
+            kwargs={"pk": story.pk, "title": slugify(story.title)}
+        ))
+        self.assertContains(response, story.title.title())
+        self.assertContains(response, "Set as shareable")
+        self.assertContains(response, "Set as public")
+        self.assertNotIn("Nothing to see here...", str(response.content))
+
+        self.client.logout()
+        story.shareable = True
+        story.save()
+        response = self.client.get(reverse(
+            'printable_story',
+            kwargs={"pk": story.pk, "title": slugify(story.title)}
+        ))
+        self.assertContains(response, story.title.title())
+        self.assertNotIn("Set as shareable", str(response.content))
+        self.assertNotIn("Set as public", str(response.content))
+        self.assertNotIn("Nothing to see here...", str(response.content))
+
+    def test_displays_content(self):
+        user = create_random_user()
+        story = Story.objects.create(title="The babilonian waterfall")
+        StoryWriter.objects.create(story=story, writer=user)
+        snippet = Snippet.objects.create(
+            author=user,
+            story=story,
+            text="This was an impressive waterfall in Babilonia."
+        )
+        self.client.login(username=user.username, password="password")
+
+        response = self.client.get(reverse('printable_story', kwargs={
+            "pk": story.pk, "title": slugify(story.title)
+        }))
+        self.assertContains(response, story.title.title())
+        self.assertContains(response, snippet.text)
+        self.assertNotIn(
+            "by {}".format(snippet.author.username), str(response.content)
+        )
+        self.assertContains(response, "<form method=\"post\"")
+        self.assertContains(response, "Set as shareable")
+        self.assertContains(response, "Set as public")
+        self.assertContains(response, "onclick=\"this.form.submit();\"")
+        self.assertContains(
+            response,
+            "Everyone who knows (or guesses) the url of a shareable story"
+        )
+        self.assertContains(
+            response,
+            "A public story will be displayed in our list for everyone to read"
+        )
+
+    def test_with_wrong_title_redirects_to_index(self):
+        user = create_random_user()
+        story = Story.objects.create(title="The super cat!")
+        StoryWriter.objects.create(story=story, writer=user)
+        self.client.login(username=user.username, password="password")
+        response = self.client.get(reverse('printable_story', kwargs={
+            'pk': story.pk,
+            'title': slugify("The not so super cat")
+        }))
+        self.assertRedirects(response, reverse('index'))
+
+    def test_initial_form_values_on_get(self):
+        user = create_random_user()
+        story = Story.objects.create(title="A turtle and her friend the cat")
+        StoryWriter.objects.create(story=story, writer=user)
+        self.client.login(username=user.username, password="password")
+        response = self.client.get(reverse('printable_story', kwargs={
+            "pk": story.pk,
+            "title": slugify(story.title)
+        }))
+        self.assertNotIn("checked ", str(response.content))
+        story.shareable = True
+        story.save()
+        response = self.client.get(reverse('printable_story', kwargs={
+            "pk": story.pk,
+            "title": slugify(story.title)
+        }))
+        self.assertContains(response, "checked ")
+
+    def test_post_wrong_title_or_not_writer_redirects_to_index(self):
+        user = create_random_user()
+        story = Story.objects.create(title="An ancient land")
+        StoryWriter.objects.create(story=story, writer=user)
+        response = self.client.post(reverse('printable_story', kwargs={
+            "pk": story.pk,
+            "title": slugify(story.title)
+        }), data={})
+        self.assertRedirects(response, reverse('index'))
+        self.client.login(username=user.username, password="password")
+        response = self.client.post(reverse("printable_story", kwargs={
+            "pk": story.pk,
+            "title": slugify("A modern land")
+        }), data={})
+        self.assertRedirects(response, reverse('index'))
+
+    def test_post_valid_form(self):
+        user = create_random_user()
+        story = Story.objects.create(title="The friends who tranvelled time")
+        StoryWriter.objects.create(story=story, writer=user)
+        self.assertEqual(story.shareable, story.public, False)
+        self.client.login(username=user.username, password="password")
+        post_data = {
+            "shareable": True,
+            "public": True
+        }
+        response = self.client.post(reverse('printable_story', kwargs={
+            "pk": story.pk,
+            "title": slugify(story.title)
+        }), data=post_data)
+        refetched_story = Story.objects.filter(pk=story.pk)[0]
+        self.assertEqual(refetched_story.shareable, True)
+        self.assertEqual(refetched_story.public, True)
+        self.assertContains(response, "checked ")
+        self.assertNotIn(
+            "The changes to the story settings could not be applied. An error",
+            str(response.content)
+        )
+
+    @patch.object(
+        views.EmailActiveWritersMixin, 'send_email_to_active_writers'
+    )
+    def test_email_sent_on_valid_post_form(
+        self, mock_send_email_to_active_writers
+    ):
+        user = create_random_user()
+        self.client.login(username=user.username, password="password")
+        story = Story.objects.create(title="The running robot")
+        StoryWriter.objects.create(story=story, writer=user)
+        post_data = {
+            "shareable": True,
+            "public": False
+        }
+        response = self.client.post(reverse('printable_story', kwargs={
+            "pk": story.pk,
+            "title": slugify(story.title)
+        }), data=post_data)
+
+        mock_send_email_to_active_writers.assert_called_with(
+            story,
+            "The story has been set as not public and shareable {}".format(
+                "by writer {}.".format(user.username))
+        )
+
+
 class PublicStoriesViewTest(TestCase):
+
+    def create_three_stories_with_different_users(self):
+        story = Story.objects.create(title="Wonderful Story", public=True)
+        user = create_random_user()
+        StoryWriter.objects.create(story=story, writer=user)
+        other_story = Story.objects.create(title="Awesome Story", public=True)
+        other_user = User.objects.create(
+            username="otheruser", email="other@email.com"
+        )
+        StoryWriter.objects.create(story=other_story, writer=other_user)
+        third_story = Story.objects.create(title="Magic Story", public=True)
+        third_user = User.objects.create(
+            username="thirduser", email="third@email.com"
+        )
+        StoryWriter.objects.create(story=third_story, writer=third_user)
+
+        return (story, other_story, third_story), (user, other_user, third_user)
+
     def test_content_without_public_stories(self):
         response = self.client.get(reverse('stories'), secure=True)
-        self.assertContains(response, "Stories")
+        self.assertContains(response, "Public Stories")
         story = Story.objects.create(title="Wonderful Story")
         user = create_random_user()
         StoryWriter.objects.create(story=story, writer=user)
@@ -69,36 +253,52 @@ class PublicStoriesViewTest(TestCase):
             str(response.content),
             str(public_story_response.content)
         )
-        self.assertContains(public_story_response, "Stories")
+        self.assertContains(public_story_response, "Public Stories")
         self.assertContains(public_story_response, story.title)
         self.assertContains(
             public_story_response, story.writers.get_queryset()[0].username
         )
 
     def test_public_stories_ordered_by_title(self):
-        story = Story.objects.create(title="Wonderful Story", public=True)
-        user = create_random_user()
-        StoryWriter.objects.create(story=story, writer=user)
-        other_story = Story.objects.create(title="Awesome Story", public=True)
-        other_user = User.objects.create(
-            username="otheruser", email="other@email.com"
-        )
-        StoryWriter.objects.create(story=other_story, writer=other_user)
-        third_story = Story.objects.create(title="Magic Story", public=True)
-        third_user = User.objects.create(
-            username="thirduser", email="third@email.com"
-        )
-        StoryWriter.objects.create(story=third_story, writer=third_user)
+        # Titles for stories start with 'W' [0], 'A'[1], 'M'[2]
+        stories, users = self.create_three_stories_with_different_users()
         response = self.client.get(reverse('stories'))
-        self.assertContains(response, story.title.title())
-        self.assertContains(response, other_story.title.title())
-        self.assertContains(response, third_story.title.title())
+        self.assertContains(response, stories[0].title.title())
+        self.assertContains(response, stories[1].title.title())
+        self.assertContains(response, stories[2].title.title())
 
-        story_ind = str(response.content).find(story.title.title())
-        other_story_ind = str(response.content).find(other_story.title.title())
-        third_story_ind = str(response.content).find(third_story.title.title())
+        w_story_ind = str(response.content).find(stories[0].title.title())
+        a_story_ind = str(response.content).find(stories[1].title.title())
+        m_story_ind = str(response.content).find(stories[2].title.title())
 
-        self.assertTrue(other_story_ind < third_story_ind < story_ind)
+        self.assertTrue(a_story_ind < m_story_ind < w_story_ind)
+
+    def test_filtering_public_stories_by_writer(self):
+        stories, users = self.create_three_stories_with_different_users()
+        response = self.client.get(reverse('stories'))
+        for user in users:
+            self.assertContains(response, user.username)
+            self.assertContains(
+                response,
+                "{}?writer={}".format(reverse('stories'), user.username)
+            )
+        self.assertNotIn("Public stories by", str(response.content))
+        self.assertNotIn(
+            "Go back to all public stories", str(response.content)
+        )
+
+        response = self.client.get(
+            reverse('stories') + "?writer=" + users[1].username
+        )
+
+        self.assertContains(
+            response, "Public Stories by {}".format(users[1].username)
+        )
+        self.assertContains(response, "Go back to all public stories")
+        self.assertContains(response, stories[1].title.title())
+        self.assertContains(response, users[1].username)
+        self.assertNotIn(users[2].username, str(response.content))
+        self.assertNotIn(stories[0].title.title(), str(response.content))
 
 
 class PersonalStoriesViewTest(TestCase):
@@ -268,6 +468,28 @@ class DisplayStoryViewTest(TestCase):
         self.assertContains(response, text)
         self.assertContains(response, user.username)
 
+    def test_displays_printable_story_link_correctly(self):
+        user = create_random_user()
+        story = Story.objects.create(title="Trully horror", public=True)
+        StoryWriter.objects.create(story=story, writer=user)
+        printable_link = reverse(
+            "printable_story",
+            kwargs={"pk": story.pk, "title": slugify(story.title)}
+        )
+        response = self.client.get(
+            reverse('display_story', kwargs={'id': story.id}),
+            secure=True
+        )
+        self.assertNotIn(printable_link, str(response.content))
+
+        self.client.login(username=user.username, password="password")
+        response = self.client.get(
+            reverse('display_story', kwargs={'id': story.id}),
+            secure=True
+        )
+        self.assertContains(response, printable_link)
+        self.assertContains(response, "See printable version & story settings")
+
     def test_displays_public_empty_story(self):
         story = Story.objects.create(title="Awesome Rodent", public=True)
         response = self.client.get(
@@ -415,6 +637,67 @@ class DisplayStoryViewTest(TestCase):
         self.assertNotIn(
             "Thank you for adding your snippet! Wait for one of the other",
             str(response.content)
+        )
+
+    def test_edit_icon_for_snippets_from_user(self):
+        user = create_random_user()
+        self.client.login(username=user.username, password="password")
+        other_user = User.objects.create(
+            username='otheruser', email='other@email.com')
+        story = Story.objects.create(title="A lion, a cat and a zebra")
+        StoryWriter.objects.create(story=story, writer=user, active=True)
+        StoryWriter.objects.create(story=story, writer=other_user, active=True)
+        other_user_snippet = Snippet.objects.create(
+            story=story, author=other_user,
+            text="The lion and the zebra were friends"
+        )
+        response = self.client.get(reverse(
+            'display_story', kwargs={'id': story.id}
+        ))
+        self.assertNotIn(
+            "<i class=\"fas fa-pen\"></i>",
+            str(response.content)
+        )
+        user_snippet = Snippet.objects.create(
+            story=story, author=user,
+            text="They both lived in the zoo"
+        )
+        response = self.client.get(reverse(
+            'display_story', kwargs={'id': story.id}
+        ))
+        self.assertContains(
+            response,
+            "<i class=\"fas fa-pen\"></i>"
+        )
+
+    def test_edited_icon_on_edited_snippets(self):
+        user = create_random_user()
+        story = Story.objects.create(
+            title="The dog that wanted to jump", public=True
+        )
+        StoryWriter.objects.create(story=story, writer=user, active=True)
+        edited_snippet = Snippet.objects.create(
+            story=story, author=user, edited=True,
+            text="This dog saw once a rabbit that jumped all the time."
+        )
+        not_edited_snippet = Snippet.objects.create(
+            story=story, author=user,
+            text="He wanted to be friends with the rabbit and jump together."
+        )
+        response = self.client.get(reverse(
+            'display_story', kwargs={'id': story.id}
+        ))
+        self.assertIn(
+            "{}\\n \\n <i class=\"fas fa-feather-alt\">".format(
+                edited_snippet.text
+            ),
+            " ".join(str(response.content).split())
+        )
+        self.assertNotIn(
+            "{}\\n \\n <i class=\"fas fa-feather-alt\">".format(
+                not_edited_snippet.text
+            ),
+            " ".join(str(response.content).split())
         )
 
     @patch.object(
@@ -577,6 +860,92 @@ class StartStoryViewTest(TestCase):
         )
 
 
+class SnippetEditViewTest(TestCase):
+
+    def create_user_story_snippet(self):
+        user = create_random_user()
+        story = Story.objects.create(title="The friendly spider")
+        snippet = Snippet.objects.create(
+            story=story, author=user, text="Hidden in a corner of an old house"
+        )
+        return user, story, snippet
+
+    def test_not_author_logged_in_redirects_to_index(self):
+        user, story, snippet = self.create_user_story_snippet()
+        response = self.client.get(reverse('snippet_edit', kwargs={
+            'pk': snippet.pk
+        }))
+        self.assertRedirects(response, reverse('index'))
+
+    def test_get_content(self):
+        user, story, snippet = self.create_user_story_snippet()
+        self.client.login(username=user.username, password='password')
+        response = self.client.get(reverse('snippet_edit', kwargs={
+            'pk': snippet.pk
+        }))
+        self.assertContains(response, "Snippet Edit")
+        self.assertContains(
+            response,
+            "An edited snippet will always have the associated \"edited\" tag"
+        )
+        self.assertContains(response, "<form method=\"post\"")
+        self.assertContains(response, snippet.text)
+        self.assertContains(response, "<input")
+        self.assertContains(response, "Apply Changes")
+        self.assertContains(response, "> Cancel edit and go back to story. <")
+        self.assertContains(response, reverse(
+            'display_story', kwargs={'id': story.id}
+        ))
+
+    @patch.object(
+        views.EmailActiveWritersMixin, 'send_email_to_active_writers'
+    )
+    def test_post_valid_form(self, mock_send_email_to_active_writers):
+        user, story, snippet = self.create_user_story_snippet()
+        self.client.login(username=user.username, password="password")
+        self.assertEqual(snippet.edited, False)
+        post_data = {
+            'text': "Making webs under the roof of an old hut."
+        }
+        response = self.client.post(reverse('snippet_edit', kwargs={
+            'pk': snippet.pk
+        }), data=post_data)
+        refetched_snippet = Snippet.objects.filter(pk=snippet.pk)[0]
+        self.assertEqual(refetched_snippet.text, post_data['text'])
+        self.assertEqual(refetched_snippet.edited, True)
+        self.assertRedirects(response, reverse(
+            'display_story', kwargs={'id': story.id}
+        ))
+        mock_send_email_to_active_writers.assert_called_with(
+            story,
+            "{} edited one of their snippets in your shared story.".format(
+                user.username
+            ) + "\nThe new text of the snippet is: \"{}\"".format(
+                refetched_snippet.text
+            )
+        )
+
+    def test_invalid_form(self):
+        user, story, snippet = self.create_user_story_snippet()
+        self.client.login(username=user.username, password='password')
+
+        post_data = {
+            'text': "This snippet must be too long"*100
+        }
+        response = self.client.post(reverse('snippet_edit', kwargs={
+            'pk': snippet.pk
+        }), data=post_data)
+        self.assertContains(response, "Snippet Edit")
+        self.assertContains(response, "Apply Changes")
+        self.assertContains(
+            response,
+            "There were some problems applying the changes to your snippet."
+        )
+        refetched_snippet = Snippet.objects.filter(pk=snippet.pk)[0]
+        self.assertEqual(refetched_snippet.text, snippet.text)
+        self.assertEqual(refetched_snippet.edited, False)
+
+
 class EmailActiveWritersMixinTest(TestCase):
 
     @patch.object(views, 'send_mail')
@@ -637,6 +1006,11 @@ class BaseContentTest(TestCase):
             ),
             '<link rel="stylesheet" type="text/css" {}'.format(
                 'href="/static/storysharing/style'
+            ),
+            '<link rel="stylesheet" href="https://use.fontawesome.co{}'.format(
+                'm/releases/v5.1.0/css/all.css" integrity="sha384-lKuwvrZot6UH'
+            ) + 'sBSfcMvOkWwlCMgc0TaWr+30HWe3a4ltaBwTZhyTEggF5tJv8tb{}'.format(
+                't" crossorigin="anonymous">'
             )
         ]
 
@@ -646,6 +1020,8 @@ class BaseContentTest(TestCase):
 
         pages.remove('display_story')
         pages.remove('reset_password')
+        pages.remove('printable_story')
+        pages.remove('snippet_edit')
 
         pages.remove('jsi18n')
         for page in pages:
@@ -657,24 +1033,41 @@ class BaseContentTest(TestCase):
                 )
 
         story = Story.objects.create(title="Awesome story")
+        snippet = Snippet.objects.create(story=story, author=user, text="Cat")
+
+        pages_with_attrs = {
+            'display_story': {
+                'id': story.id
+            },
+            'printable_story': {
+                'pk': story.pk,
+                'title': slugify(story.title)
+            },
+            'reset_password': {
+                'uidb64': 'NA',
+                'token': 'set-password'
+            },
+            'snippet_edit': {
+                'pk': snippet.pk
+            }
+        }
+
+        for page in pages_with_attrs:
+            response = self.client.get(
+                reverse(page, kwargs=pages_with_attrs[page]),
+                secure=True
+            )
+            for header in headers:
+                self.assertContains(
+                    response,
+                    header
+                )
+
         response = self.client.get(
-            reverse('display_story', kwargs={'id': story.id}),
+            reverse('printable_story', kwargs={
+                'pk': story.pk, "title": slugify(story.title)}),
             secure=True
         )
-        for header in headers:
-            self.assertContains(
-                response,
-                header
-            )
-
-        response = self.client.get(reverse(
-            'reset_password', kwargs={'uidb64': 'NA', 'token': 'set-password'}
-        ), secure=True)
-        for header in headers:
-            self.assertContains(
-                response,
-                header
-            )
 
     def test_menu_displays_in_all_pages(self):
         user = create_random_user()
@@ -685,6 +1078,8 @@ class BaseContentTest(TestCase):
 
         pages.remove('display_story')
         pages.remove('reset_password')
+        pages.remove('printable_story')
+        pages.remove('snippet_edit')
 
         pages.remove('jsi18n')
         for page in pages:
@@ -701,33 +1096,39 @@ class BaseContentTest(TestCase):
             self.assertContains(response, user.username.title())
 
         story = Story.objects.create(title="Awesome story")
-        response = self.client.get(
-            reverse('display_story', kwargs={'id': story.id}),
-            secure=True
-        )
-        response = self.client.get(reverse(page), secure=True)
-        self.assertContains(response, "<div class='menu'>")
-        self.assertContains(response, reverse('index'))
-        self.assertContains(response, reverse('stories'))
-        self.assertContains(response, reverse('personal'))
-        self.assertContains(response, reverse('profile'))
-        self.assertContains(response, "Home")
-        self.assertContains(response, "Public Stories")
-        self.assertContains(response, "Your Stories")
-        self.assertContains(response, user.username.title())
+        snippet = Snippet.objects.create(story=story, author=user, text="Cat")
 
-        response = self.client.get(reverse(
-            'reset_password', kwargs={'uidb64': 'NA', 'token': 'set-password'}
-        ), secure=True)
-        self.assertContains(response, "<div class='menu'>")
-        self.assertContains(response, reverse('index'))
-        self.assertContains(response, reverse('stories'))
-        self.assertContains(response, reverse('personal'))
-        self.assertContains(response, reverse('profile'))
-        self.assertContains(response, "Home")
-        self.assertContains(response, "Public Stories")
-        self.assertContains(response, "Your Stories")
-        self.assertContains(response, user.username.title())
+        pages_with_attrs = {
+            'display_story': {
+                'id': story.id
+            },
+            'printable_story': {
+                'pk': story.pk,
+                'title': slugify(story.title)
+            },
+            'reset_password': {
+                'uidb64': 'NA',
+                'token': 'set-password'
+            },
+            'snippet_edit': {
+                'pk': snippet.pk
+            }
+        }
+
+        for page in pages_with_attrs:
+            response = self.client.get(
+                reverse(page, kwargs=pages_with_attrs[page]),
+                secure=True
+            )
+            self.assertContains(response, "<div class='menu'>")
+            self.assertContains(response, reverse('index'))
+            self.assertContains(response, reverse('stories'))
+            self.assertContains(response, reverse('personal'))
+            self.assertContains(response, reverse('profile'))
+            self.assertContains(response, "Home")
+            self.assertContains(response, "Public Stories")
+            self.assertContains(response, "Your Stories")
+            self.assertContains(response, user.username.title())
 
         # User logged out menu content
         response = self.client.get(reverse('logout'), secure=True)

@@ -18,12 +18,24 @@
             {% endif %}
             {% for snippet in snippets %}
                 <div class="snippet">
-                    <p class="text">{{ snippet.text }}</p>
-                    <p class="author">- by {{ snippet.author }}</p>
+                    <p class="text">
+                        {{ snippet.text }}
+                        {% if snippet.edited %}
+                            <i class="fas fa-feather-alt"></i>
+                        {% endif %}
+                    </p>
+                    <p class="author">
+                        - by {{ snippet.author }}
+                        {% if snippet.author == user %}
+                            <a href="{% url 'snippet_edit' pk=snippet.pk %}"> <i class="fas fa-pen"></i></a>
+                        {% endif %}
+                    </p>
                 </div>
             {% endfor %}
             {% if not snippets %}
                 <p class="links">This story is still empty!</p>
+            {% else %}
+                <p class="links tiny">Any snippets with the "<i class="fas fa-feather-alt"></i>" simbol have been edited.</p>
             {% endif %}
             {% if form and storywriter.active and story.available %}
                 <form method="post">
@@ -45,6 +57,9 @@
                 </form>
             {% elif editable and storywriter.active and story.available and not form %}
                 <p class="bottom links">Thank you for adding your snippet! Wait for one of the other writers to add theirs...</p>
+            {% endif %}
+            {% if editable %}
+                <p class="links rightside"><a href="{% url 'printable_story' pk=story.pk title=story.title|slugify %}">See printable version & story settings</a></p>
             {% endif %}
         {% endif %}
     </div>

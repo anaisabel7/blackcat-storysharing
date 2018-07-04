@@ -1,0 +1,33 @@
+{% extends "base.html" %}
+
+{% block content %}
+    <div class="main">
+        {% if not story.shareable and not is_writer %}
+            <p class="header">Nothing to see here...</p>
+            <p class="links">If you are certain there should be something here, you might need to login or tell your friend to set their story as "shareable".</p>
+        {% else %}
+            <p class="header">
+                {{ object.title|title }}
+            </p>
+            {% for snippet in object.snippet_set.all %}
+                <p class="links">{{ snippet.text }}</p>
+            {% endfor %}
+            {% if is_writer %}
+                <div class="rightside">
+                    {% if errors %}
+                        <p>The changes to the story settings could not be applied. An error occurred</p>
+                    {% endif %}
+                    <form method="post">
+                        {% csrf_token %}
+                        <p>{{ form.shareable.errors }}</p>
+                        <p>{{ form.shareable.label_tag }}{{ form.shareable }}</p>
+                        <p class="tiny">{{ form.shareable.help_text }}</p>
+                        <p>{{ form.public.errors }}</p>
+                        <p>{{ form.public.label_tag }}{{ form.public }}</p>
+                        <p class="tiny">{{ form.public.help_text }}</p>
+                    </form>
+                </div>
+            {% endif %}
+        {% endif %}
+    </div>
+{% endblock %}
