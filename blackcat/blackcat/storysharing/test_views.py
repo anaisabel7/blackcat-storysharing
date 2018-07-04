@@ -6,7 +6,7 @@ from django.test import TestCase, RequestFactory
 from unittest.mock import patch, call
 from .models import User, Story, StoryWriter, Snippet
 from .urls import urlpatterns
-from . import views, forms
+from . import views
 
 
 def create_random_user():
@@ -920,7 +920,7 @@ class SnippetEditViewTest(TestCase):
             story,
             "{} edited one of their snippets in your shared story.".format(
                 user.username
-            ) + "\nThe new text of the snippet is: \"{}".format(
+            ) + "\nThe new text of the snippet is: \"{}\"".format(
                 refetched_snippet.text
             )
         )

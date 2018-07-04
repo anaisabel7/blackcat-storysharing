@@ -63,8 +63,7 @@ class PrintableStoryView(DetailView, EmailActiveWritersMixin):
     def post(self, request, *args, **kwargs):
         self.object = self.get_object()
         context = self.get_context_data(object=self.object)
-        context['is_writer'] = request.user.username in [
-            x['username'] for x in self.object.writers.values()]
+        context['is_writer'] = request.user in self.object.writers.all()
 
         if (
             slugify(self.object.title) != kwargs['title']
@@ -327,7 +326,7 @@ class SnippetEditView(DetailView, EmailActiveWritersMixin):
                 self.object.story,
                 "{} edited one of their snippets in your shared story.".format(
                     request.user
-                ) + "\nThe new text of the snippet is: \"{}".format(
+                ) + "\nThe new text of the snippet is: \"{}\"".format(
                     self.object.text
                 )
             )
